@@ -2,7 +2,9 @@
   "name": "entrew",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=20.9" },
+  "engines": {
+    "node": ">=20.9"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,7 +16,7 @@
     "test:contract-surface": "node --test tests/contract-surface/contract.test.mjs",
     "test:python": "python -m unittest discover -s tests/python -p test_*policy.py -v",
     "test:mutations": "python -m unittest discover -s tests/python -p test_mutation_smoke.py -v",
-    "test:direct": "pytest tests/python/test_direct_contract.py -v",
+    "test:direct": "node scripts/run-direct-tests.mjs tests/python/test_direct_contract.py -v",
     "test:e2e": "playwright test",
     "network:check": "node scripts/network-check.mjs",
     "cli:version": "npx genlayer --version",
@@ -31,14 +33,25 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
+    "@eslint/js": "9.39.1",
     "@playwright/test": "1.58.2",
     "@types/node": "22.19.15",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.1",
-    "eslint-config-next": "16.4.2",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react-hooks": "7.1.1",
     "genlayer": "0.39.1",
-    "typescript": "7.0.2"
+    "globals": "17.13.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2"
+  },
+  "overrides": {
+    "genlayer": {
+      "dockerode": "5.0.1",
+      "vitest": "4.1.11"
+    },
+    "tinypool": "2.2.0",
+    "uuid": "11.1.1"
   }
 }
-

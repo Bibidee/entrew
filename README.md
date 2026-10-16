@@ -2,7 +2,7 @@
 
 ENTREW is a backendless public review registry for developer programs. Organizers publish immutable two- or three-criterion requirements and deadlines. Applicants submit a public GitHub repository, a full commit SHA, bounded evidence paths, and a same-revision `.entrew/claim.json` marker. GenLayer validators independently retrieve and assess the bounded evidence. A contract outcome is only visible after finalized successful execution and canonical state readback.
 
-This repository was built from the supplied specification package in [`entrew/`](entrew/README.md). It contains application and contract source, but **it has not been installed, deployed, hosted, or live-verified**. Do not use it as a production eligibility service yet. The `.env.example` contract address is deliberately empty; the app shows a real unconfigured state instead of demo programs.
+This repository was built from the supplied specification package in [`entrew/`](entrew/README.md). The application and contract source have been installed and validated locally, but the contract has **not** been deployed or verified on Studionet. The `.env.example` contract address is deliberately empty; the app shows a real unconfigured state instead of demo programs.
 
 ## Source layout
 
@@ -20,22 +20,20 @@ This repository was built from the supplied specification package in [`entrew/`]
 
 ## Local commands
 
-Install requires a generated and committed lockfile. Then run:
+Install the pinned JavaScript and Python test dependencies, then run:
 
 ```powershell
 npm ci
-npm run cli:version
+python -m pip install -r requirements-test.txt
+npx playwright install chromium
+npm run cli:local-version
 npm run network:check
-npm run typecheck
-npm run lint
-npm test
-npm run test:python
-npm run test:mutations
-npm run test:direct
-npm run build
+npm run check
+npm run test:e2e
+npm audit
 ```
 
-`npm run test:direct` needs Python 3.12+, `pytest`, and `genlayer-test==0.29.2`. The source-policy Python suite uses the standard library. Browser checks are wired to Playwright but require installed browser binaries and an actual deployed contract for meaningful lifecycle checks.
+`npm run check` runs typecheck, lint, source tests, Python policy and mutation tests, Direct Mode contract tests, and the static production build. `npm run test:e2e` covers desktop/mobile Chromium, query-ID route reloads, responsive overflow, wallet selection, and axe accessibility in the deliberately unconfigured state. These checks do not establish live transaction finality or a deployed lifecycle.
 
 ## Configuration
 

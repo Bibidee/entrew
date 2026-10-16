@@ -373,7 +373,9 @@ def _review_snapshot(snapshot_json, criteria_json):
     if prompt_criteria:
         prompt = _make_prompt(prompt_criteria, prompt_evidence)
         try:
-            model_output = gl.nondet.exec_prompt(prompt)
+            model_output = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(model_output, dict):
+                model_output = json.dumps(model_output, sort_keys=True, separators=(",", ":"))
             if not isinstance(model_output, str):
                 raise ValueError("prompt result is not text")
             reduced_mapping = prompt_mapping["mapping"]
@@ -668,7 +670,7 @@ class EntrewRegistry(gl.Contract):
         self._append("program_entries:" + program_id, entry_id)
         self._append("wallet_entries:" + applicant, entry_id)
         self._append("entry_revisions:" + entry_id, revision_id)
-        self.indexes["revision_history:" + revision_id] = "[]"
+        self.indexes["revision_history:" + revision_id] = "0"
         return entry_id
 
     @gl.public.write

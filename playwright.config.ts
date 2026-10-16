@@ -7,7 +7,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:3100", trace: "retain-on-failure" },
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } } },
-    { name: "chromium-mobile", use: { ...devices["iPhone 13"] } },
+    { name: "chromium-mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3100",

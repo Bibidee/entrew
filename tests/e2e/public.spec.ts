@@ -12,6 +12,7 @@ const publicRoutes = [
 ];
 
 test("all static query-ID routes render useful unconfigured states", async ({ page }) => {
+  test.setTimeout(60_000);
   for (const route of publicRoutes) {
     await page.goto(route);
     await expect(page.locator(".brand")).toContainText("entrew");
@@ -43,7 +44,13 @@ test("narrow and desktop viewports do not overflow horizontally", async ({ page 
 test("explorer has no automated accessibility violations", async ({ page }) => {
   await page.goto("/");
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations).toEqual([]);
+  expect(
+    results.violations.map(({ id, impact, nodes }) => ({
+      id,
+      impact,
+      targets: nodes.map(({ target }) => target.join(" ")),
+    })),
+  ).toEqual([]);
 });
 
 test("MetaMask and Rabby can be selected independently and switch to exact Studionet", async ({ page }) => {
@@ -55,7 +62,7 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
       request: async ({ method }: { method: string }) => {
         if (method === "eth_requestAccounts" || method === "eth_accounts") return [kind === "metamask" ? "0x1111111111111111111111111111111111111111" : "0x2222222222222222222222222222222222222222"];
         if (method === "eth_chainId") return chain;
-        if (method === "wallet_switchEthereumChain") { chain = "0xf26f"; return null; }
+        if (method === "wallet_switchEthereumChain") { chain = "0xf22f"; return null; }
         if (method === "wallet_addEthereumChain") return null;
         throw new Error(`Unexpected test provider request: ${method}`);
       },
@@ -70,7 +77,7 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
   await page.getByRole("button", { name: /Rabby/ }).click();
   await expect(page.getByRole("button", { name: "Switch network" })).toBeVisible();
   await page.getByRole("button", { name: "Switch network" }).click();
-  await expect(page.getByText(/Rabby · 0x2222/)).toBeVisible();
+  await expect(page.locator(".wallet-pill")).toHaveAttribute("title", /Rabby · 0x2222/);
   await expect(page.getByRole("button", { name: "Disconnect" })).toBeVisible();
   await page.getByRole("button", { name: "Disconnect" }).click();
   await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();

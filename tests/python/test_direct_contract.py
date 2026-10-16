@@ -42,15 +42,19 @@ def b64(text):
     return base64.b64encode(text.encode("utf-8")).decode("ascii")
 
 
+def wallet_address(wallet):
+    return "0x" + bytes(wallet).hex()
+
+
 def gh_file(text):
     return {"status": 200, "body": json.dumps({"type": "file", "encoding": "base64", "content": b64(text)})}
 
 
 def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200):
     repo = "example/registry"
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry$", {"status": 200, "body": json.dumps({"full_name": repo})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": repo})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 200, "body": json.dumps({"sha": sha})})
-    marker = {"program_id": program_id, "wallet": str(applicant).lower(), "repository": repo, "challenge_nonce": "a" * 32}
+    marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": "a" * 32}
     if marker_status == 200:
         marker_body = {"type": "file", "encoding": "base64", "content": b64(json.dumps(marker, separators=(",", ":")))}
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": 200, "body": json.dumps(marker_body)})
@@ -78,11 +82,11 @@ def test_publish_entry_authorization_and_public_pagination(direct_vm, direct_dep
     contract = direct_deploy(str(CONTRACT))
     direct_vm.sender = direct_alice
     program_id = publish(contract, direct_alice)
-    assert json.loads(contract.get_program(program_id))["organizer"] == str(direct_alice).lower()
+    assert json.loads(contract.get_program(program_id))["organizer"] == wallet_address(direct_alice)
     assert contract.get_program_count() == 1
     entry_id = submit(contract, direct_vm, direct_bob, program_id, "a" * 40)
-    assert json.loads(contract.get_entry(entry_id))["applicant"] == str(direct_bob).lower()
-    assert contract.get_wallet_entry_count(str(direct_bob)) == 1
+    assert json.loads(contract.get_entry(entry_id))["applicant"] == wallet_address(direct_bob)
+    assert contract.get_wallet_entry_count(wallet_address(direct_bob)) == 1
     with direct_vm.expect_revert("only the applicant wallet"):
         direct_vm.sender = direct_alice
         contract.submit_revision(entry_id, "b" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "b" * 32)
@@ -114,7 +118,7 @@ def test_real_contract_review_persists_only_final_qualified_result(direct_vm, di
     ]}))
     attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
     result = json.loads(contract.get_review(attempt_id))
-    assert result["outcome"] == "QUALIFIED"
+    assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files", "criteria")}
     assert [row["status"] for row in result["criteria"]] == ["MET", "MET"]
     assert len(json.loads(contract.get_program_qualified_page(program_id, 0, 25))) == 1
 
@@ -125,13 +129,20 @@ def test_negative_proof_survives_an_unavailable_other_criterion(direct_vm, direc
     program_id = publish(contract, direct_alice)
     sha = "d" * 40
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
-    configure_common_web(direct_vm, sha, program_id, direct_bob, source_a={"status": 503, "body": "unavailable"})
+    configure_common_web(
+        direct_vm,
+        sha,
+        program_id,
+        direct_bob,
+        source_a=gh_file("def health():\\n    return 'failure'\\n"),
+        source_b={"status": 503, "body": "unavailable"},
+    )
     direct_vm.mock_llm(r".*", json.dumps({"criteria": [
-        {"index": 0, "status": "NOT_MET", "evidence_paths": ["docs/usage.md"], "explanation": "The fixed document explicitly documents a different status."},
+        {"index": 0, "status": "NOT_MET", "evidence_paths": ["src/runtime.py"], "explanation": "The implementation returns failure instead of the documented ok status."},
     ]}))
     attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
     result = json.loads(contract.get_review(attempt_id))
-    assert result["outcome"] == "NOT_ESTABLISHED"
+    assert result["outcome"] == "NOT_ESTABLISHED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files", "criteria")}
     assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
 
 

@@ -19,7 +19,7 @@ test("validator execution independently rebuilds evidence and compares stable fi
   assert.match(validatorBody, /independently_reviewed\s*=\s*_review_snapshot/);
   assert.match(validatorBody, /_consensus_projection\(leader_review\)\s*==\s*_consensus_projection\(independently_reviewed\)/);
   assert.match(contract, /gl\.nondet\.web\.get\(url, headers=GITHUB_HEADERS\)/);
-  assert.match(contract, /gl\.nondet\.exec_prompt\(prompt\)/);
+  assert.match(contract, /gl\.nondet\.exec_prompt\(prompt,\s*response_format="json"\)/);
 });
 
 test("only fixed GitHub API URLs and bounded evidence paths are accepted", () => {
