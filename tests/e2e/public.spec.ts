@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+const configuredContract = process.env.NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS?.trim();
 
 const publicRoutes = [
   "/",
@@ -11,7 +13,22 @@ const publicRoutes = [
   "/activity",
 ];
 
+async function waitForFinalizedRead(page: Page, locator: Locator) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await expect(locator).toBeVisible({ timeout: 30_000 });
+      return;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      const retry = page.getByRole("button", { name: "Retry read" });
+      await expect(retry).toBeVisible();
+      await retry.click();
+    }
+  }
+}
+
 test("all static query-ID routes render useful unconfigured states", async ({ page }) => {
+  test.skip(Boolean(configuredContract), "This test covers the intentionally unconfigured registry only.");
   test.setTimeout(60_000);
   for (const route of publicRoutes) {
     await page.goto(route);
@@ -26,10 +43,22 @@ test("all static query-ID routes render useful unconfigured states", async ({ pa
 });
 
 test("public explorer shows no invented registry rows while unconfigured", async ({ page }) => {
+  test.skip(Boolean(configuredContract), "This test covers the intentionally unconfigured registry only.");
   await page.goto("/");
   await expect(page.getByText(/No programs or counts are shown until a real Studionet deployment is integrated/i)).toBeVisible();
   await expect(page.locator(".program-card")).toHaveCount(0);
   await expect(page.getByText(/published in finalized contract state/)).toHaveCount(0);
+});
+
+test("configured registry reads the corrected contract's finalized program", async ({ page }) => {
+  test.skip(!configuredContract, "Set NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS to run this isolated live-contract check.");
+  test.setTimeout(180_000);
+  await page.goto("/");
+  await waitForFinalizedRead(page, page.getByText("1 published in finalized contract state"));
+  const program = page.getByRole("link", { name: /Corrected positive idempotency verification/i });
+  await expect(program).toBeVisible();
+  await program.click();
+  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: "Corrected positive idempotency verification" }));
 });
 
 test("all routes fit every requested viewport", async ({ page }) => {

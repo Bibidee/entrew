@@ -232,6 +232,10 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     const run = async () => {
       setLoadError("");
       if (page === "activity") { setLoadState("ready"); return; }
+      if ((page === "program" || page === "apply" || page === "evidence") && !query) {
+        setLoadState("loading");
+        return;
+      }
       setLoadState("loading");
       try {
         if (page === "explorer") {
@@ -318,7 +322,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     };
     void run();
     return () => { cancelled = true; };
-  }, [page, explorerOffset, programApplicantOffset, programQualifiedOffset, workspaceApplicationOffset, workspacePublicationOffset, reload, programId, entryId, wallet]);
+  }, [page, explorerOffset, programApplicantOffset, programQualifiedOffset, workspaceApplicationOffset, workspacePublicationOffset, reload, query, programId, entryId, wallet]);
 
   const filteredPrograms = useMemo(() => programs.filter((item) => {
     const text = `${item.title} ${item.summary} ${item.description}`.toLowerCase();
