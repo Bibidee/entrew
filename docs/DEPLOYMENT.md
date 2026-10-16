@@ -1,6 +1,15 @@
 # Deployment record and runbook
 
-## Current production record — 2026-10-16
+## Remediation branch — not deployed
+
+- Branch: `audit/full-remediation`, based on verified `origin/main` commit `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`.
+- The contract source changed during this audit. Its current Git-stored LF blob SHA-256 is `c8836a1cef11f6e969f0913d5eae9026a77d705bae8168584b6221ffbe2fb898`; this is not the deployed source hash.
+- The current contract fix has not been deployed. No production Vercel environment value or alias was changed. The live address and transaction below are historical evidence for the previous source version only.
+- Adoption requires a separately authorized Studionet deployment of the exact reviewed source, followed by source-byte comparison, finality/readback checks, and frontend configuration/deployment. The current task's checks are local Direct Mode and browser evidence, not live proof for the modified contract.
+
+## Last recorded production release — 2026-10-16
+
+The details below are carried forward from the prior release record. They were not independently re-read from Vercel deployment configuration during this remediation turn.
 
 - Frontend alias: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
 - Vercel project: `the-entrew` in team `bibidees-projects`.

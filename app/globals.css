@@ -15,7 +15,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; background: var(--canvas); }
+html { background: var(--canvas); }
 body { margin: 0; background: var(--canvas); color: var(--midnight); font-family: Aptos, 'Segoe UI', ui-sans-serif, system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -130,7 +130,7 @@ select.control[multiple] { min-height: 84px; }
 .row-item p { margin: 3px 0 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
 .row-item strong { font-size: 13px; }
 .hash { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; font-size: 11px; }
-.stepper { display: flex; align-items: center; gap: 9px; margin: 10px 0 20px; color: #798197; font-size: 10px; }
+.stepper { display: flex; align-items: center; gap: 9px; margin: 10px 0 20px; color: #59637a; font-size: 10px; }
 .step { display: inline-flex; align-items: center; gap: 7px; }
 .step b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #e9ebf2; color: #687188; font-size: 10px; }
 .step.active { color: var(--cobalt); font-weight: 800; }

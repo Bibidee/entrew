@@ -2,6 +2,8 @@
 
 This is the V1 requirement matrix. A test passing a subset does not mark an entire row or lifecycle complete. Execution evidence is summarized at the end and detailed in `../../docs/TEST_RESULTS.md`.
 
+The historical `LIVE-PROVEN` deployment and fixture rows below apply to the prior deployed source. The current remediation changes the contract and remains undeployed; local Direct Mode passes are not live Studionet evidence for it.
+
 ## A. Contract/Direct Mode
 
 A01 publish valid 2-criterion program; A02 publish valid 3-criterion program; A03 reject <2/>3; A04 reject vague/incomplete structural rubric; A05 reject missing or expired deadline; A06 reject malformed lengths; A07 freeze rubric/title/deadline; A08 organizer cannot override verdict; A09 non-organizer cannot edit program; A10 publish rejected if accidental payable value; A11 organizer/read indexes paginate 0/1/25/26/121 records; A12 idempotence/sparse indexes under concurrent inserts.
@@ -30,7 +32,7 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 
 `AUTOMATED-PASSED`, `LIVE-PROVEN`, `MANUALLY-PROVEN`, `TOOLING-LIMITED`, `PENDING`, `FAILED`. Every claimed outcome links to a precise test run, transaction or browser observation. CI cannot substitute for live validator judgments.
 
-## Current execution status — 2026-10-16
+## Historical production execution status — 2026-10-16
 
 ### AUTOMATED-PASSED
 
@@ -66,3 +68,16 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 - Full adversarial prompt, live validator-divergence, held-out semantic benchmark, broad mutation/property suites, and complete A–E coverage.
 
 See `../../docs/TEST_RESULTS.md` and `../../docs/DEPLOYMENT.md` for full hashes, canonical results and receipt details. Never change a pending case to `LIVE-PROVEN` based on Direct Mode or mocked browser fixtures.
+
+## Remediation branch execution status — 2026-10-16
+
+Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e56769` and is not deployed. Verified local results for this source:
+
+- `npm ci`: passed, 525 packages, 0 install-time vulnerabilities.
+- `py -3.13 -m pip install -r requirements-test.txt`: passed; Python 3.11 does not satisfy `genlayer-test==0.29.2`.
+- CLI/network: passed with CLI `0.39.1`, RPC chain `61999`, no active-source `61997` or preview-network contamination.
+- `npm run check`: passed: Node 5, policy 15, mutation 4, Direct Mode 16; typecheck, lint and production build also passed.
+- `npm run test:e2e`: 10/10 passed across desktop/mobile projects; seven routes and six viewport widths, route axe scans, and keyboard wallet-modal test.
+- `npm audit`: 0 vulnerabilities.
+
+The added Direct Mode regression reproduces the raw fallback ambiguity: a raw marker 404 stays `INCONCLUSIVE`; malformed API evidence can recover through raw fallback; provider and source failures retain differentiated issue codes. None of these results is `LIVE-PROVEN`. All L01–L16 live checks for the modified source remain pending until an authorized deployment and controlled wallet actions are completed. The held-out semantic benchmark also remains pending.

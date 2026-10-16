@@ -2,6 +2,8 @@
 
 Last updated: 2026-10-16. This ledger records observed evidence; unresolved matrix items remain explicit.
 
+**Historical release record:** the deployment and lifecycle evidence below applies to the source hashes recorded here, before remediation branch `audit/full-remediation` (base `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`). The remediation branch changes the contract and has not been deployed. Do not interpret this ledger as live evidence for the modified contract. Current status is in `../../docs/DEPLOYMENT.md` and `../../docs/TEST_RESULTS.md`.
+
 ## Source and provenance
 
 - Product repository: [Bibidee/entrew](https://github.com/Bibidee/entrew).
@@ -70,7 +72,7 @@ Negative:
 
 ## Open checks and release state
 
-Requested Studionet deploy, production address configuration/redeploy, and real positive/negative lifecycles are complete.
+The historical release recorded here completed its Studionet deployment, production address configuration/redeploy, and real positive/negative lifecycles. The modified remediation contract has not been deployed.
 
 Not yet live-proven: corrected revision, controlled inconclusive and retry/cooldown, replay, unauthorized wallet, wrong-network real-wallet behavior, complete mobile/keyboard QA, and held-out semantic accuracy. The negative assessment RPC hash lookup had one transient “not found” response after its finalized SDK result and canonical state were read; later canonical readback preserved the outcome.
 

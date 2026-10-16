@@ -3,6 +3,8 @@
 import base64
 import json
 import time
+from contextlib import contextmanager
+from unittest.mock import patch
 from pathlib import Path
 
 import pytest
@@ -50,13 +52,13 @@ def gh_file(text):
     return {"status": 200, "body": json.dumps({"type": "file", "encoding": "base64", "content": b64(text)})}
 
 
-def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200):
+def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200, nonce="a" * 32, marker_encoding="base64"):
     repo = "example/registry"
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": repo})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 200, "body": json.dumps({"sha": sha})})
-    marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": "a" * 32}
+    marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": nonce}
     if marker_status == 200:
-        marker_body = {"type": "file", "encoding": "base64", "content": b64(json.dumps(marker, separators=(",", ":")))}
+        marker_body = {"type": "file", "encoding": marker_encoding, "content": b64(json.dumps(marker, separators=(",", ":")))}
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": 200, "body": json.dumps(marker_body)})
     else:
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": marker_status, "body": "{}"})
@@ -64,7 +66,7 @@ def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, s
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/docs/usage\.md", source_b or gh_file("# Runtime health\nCall /health; a valid request returns ok.\n"))
 
 
-def submit(contract, direct_vm, direct_bob, program_id, sha):
+def submit(contract, direct_vm, direct_bob, program_id, sha, nonce="a" * 32):
     direct_vm.sender = direct_bob
     return contract.submit_entry(
         program_id,
@@ -73,7 +75,7 @@ def submit(contract, direct_vm, direct_bob, program_id, sha):
         sha,
         json.dumps(["src/runtime.py", "docs/usage.md"]),
         json.dumps({"0": ["src/runtime.py"], "1": ["docs/usage.md"]}),
-        "a" * 32,
+        nonce,
     )
 
 
@@ -121,6 +123,10 @@ def test_real_contract_review_persists_only_final_qualified_result(direct_vm, di
     assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files", "criteria")}
     assert [row["status"] for row in result["criteria"]] == ["MET", "MET"]
     assert len(json.loads(contract.get_program_qualified_page(program_id, 0, 25))) == 1
+    with direct_vm.expect_revert("qualified entries are terminal"):
+        direct_vm.sender = direct_bob
+        contract.submit_revision(entry_id, "b" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "b" * 32)
+    assert contract.get_entry_revision_count(entry_id) == 1
 
 
 def test_negative_proof_survives_an_unavailable_other_criterion(direct_vm, direct_deploy, direct_alice, direct_bob):
@@ -174,6 +180,25 @@ def test_provider_outage_is_product_inconclusive(direct_vm, direct_deploy, direc
     assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
 
 
+def test_raw_fallback_ambiguous_marker_404_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "8" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 403, "body": "rate limited"})
+    raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
+    direct_vm.mock_web(raw + r"\.entrew/claim\.json$", {"status": 404, "body": "not found"})
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "PROVIDER_UNAVAILABLE"
+    assert result["issue_code"] == "GITHUB_403_AMBIGUOUS"
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
 def test_raw_github_fallback_recovers_when_api_is_unavailable(direct_vm, direct_deploy, direct_alice, direct_bob):
     contract = direct_deploy(str(CONTRACT))
     direct_vm.sender = direct_alice
@@ -204,3 +229,222 @@ def test_raw_github_fallback_recovers_when_api_is_unavailable(direct_vm, direct_
     assert len(result["marker_sha256"]) == 64
     assert all(item["classification"] == "REVISION_BOUND" for item in result["files"])
     assert len(json.loads(contract.get_program_qualified_page(program_id, 0, 25))) == 1
+
+
+def test_malformed_api_evidence_response_uses_raw_fallback(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "7" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob)
+
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/src/runtime\.py", {"status": 200, "body": "not JSON"})
+    marker = {
+        "program_id": program_id,
+        "wallet": wallet_address(direct_bob),
+        "repository": "example/registry",
+        "challenge_nonce": "a" * 32,
+    }
+    raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
+    direct_vm.mock_web(raw + r"\.entrew/claim\.json$", {"status": 200, "body": json.dumps(marker, separators=(",", ":"))})
+    direct_vm.mock_web(raw + r"src/runtime\.py$", {"status": 200, "body": "def health():\n    return 'ok'\n"})
+    direct_vm.mock_web(raw + r"docs/usage\.md$", {"status": 200, "body": "# Runtime health\nCall /health; a valid request returns ok.\n"})
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "MET", "evidence_paths": ["src/runtime.py"], "explanation": "The function returns the documented status."},
+        {"index": 1, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The guide states the request and response."},
+    ]}))
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files", "criteria")}
+    assert result["provenance"] == "REVISION_BOUND"
+
+
+def test_malformed_marker_encoding_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "6" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob, marker_encoding="utf-8")
+    raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
+    direct_vm.mock_web(raw + r"\.entrew/claim\.json$", {"status": 404, "body": "not found"})
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+
+@contextmanager
+def _warp_to(direct_vm, timestamp):
+    # Direct Mode's warp changes its message timestamp; patch Python's clock
+    # because this contract intentionally uses time.time() for GenVM time.
+    with patch("time.time", return_value=timestamp):
+        yield
+
+
+def _inconclusive_web(direct_vm, sha, program_id, applicant):
+    configure_common_web(
+        direct_vm,
+        sha,
+        program_id,
+        applicant,
+        source_a={"status": 503, "body": "temporarily unavailable"},
+        source_b={"status": 503, "body": "temporarily unavailable"},
+    )
+    raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
+    direct_vm.mock_web(raw + r"\.entrew/claim\.json$", {"status": 503, "body": "temporarily unavailable"})
+
+
+def _negative_llm(direct_vm):
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "NOT_MET", "evidence_paths": ["src/runtime.py"], "explanation": "The implementation returns failure instead of the required status."},
+        {"index": 1, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The documentation states the required status."},
+    ]}))
+
+
+def _positive_llm(direct_vm):
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "MET", "evidence_paths": ["src/runtime.py"], "explanation": "The implementation returns the required status."},
+        {"index": 1, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The documentation states the required status."},
+    ]}))
+
+
+def test_unauthorized_assessment_and_conclusive_replay_do_not_write(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "1" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob)
+    _negative_llm(direct_vm)
+
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert("only the applicant wallet"):
+        contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert contract.get_revision_attempt_count(entry_id + ":r1") == 0
+    assert json.loads(contract.get_entry(entry_id))["current_result"] == "PENDING"
+
+    direct_vm.sender = direct_bob
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert json.loads(contract.get_review(attempt_id))["outcome"] == "NOT_ESTABLISHED"
+    with direct_vm.expect_revert("a conclusive snapshot cannot be re-evaluated"):
+        contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert contract.get_revision_attempt_count(entry_id + ":r1") == 1
+    assert contract.get_entry_revision_count(entry_id) == 1
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+def test_inconclusive_retry_obeys_exact_cooldown_and_can_qualify(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "3" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    _inconclusive_web(direct_vm, sha, program_id, direct_bob)
+    direct_vm.sender = direct_bob
+
+    first_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    first = json.loads(contract.get_review(first_id))
+    assert first["outcome"] == "INCONCLUSIVE"
+    assert first["assessed_at"] > 0
+    with direct_vm.expect_revert("cooldown has not elapsed"):
+        contract.evaluate_revision(entry_id, entry_id + ":r1")
+    with _warp_to(direct_vm, first["assessed_at"] + 599):
+        with direct_vm.expect_revert("cooldown has not elapsed"):
+            contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert contract.get_revision_attempt_count(entry_id + ":r1") == 1
+
+    direct_vm.clear_mocks()
+    configure_common_web(direct_vm, sha, program_id, direct_bob)
+    _positive_llm(direct_vm)
+    with _warp_to(direct_vm, first["assessed_at"] + 600):
+        second_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert json.loads(contract.get_review(second_id))["outcome"] == "QUALIFIED"
+    assert len(json.loads(contract.get_program_qualified_page(program_id, 0, 25))) == 1
+
+
+def test_inconclusive_rechecks_are_capped_after_two_cooldowns(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "4" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    _inconclusive_web(direct_vm, sha, program_id, direct_bob)
+    direct_vm.sender = direct_bob
+
+    prior = json.loads(contract.get_review(contract.evaluate_revision(entry_id, entry_id + ":r1")))
+    for _ in range(2):
+        direct_vm.clear_mocks()
+        _inconclusive_web(direct_vm, sha, program_id, direct_bob)
+        with _warp_to(direct_vm, prior["assessed_at"] + 600):
+            prior = json.loads(contract.get_review(contract.evaluate_revision(entry_id, entry_id + ":r1")))
+        assert prior["outcome"] == "INCONCLUSIVE"
+    with _warp_to(direct_vm, prior["assessed_at"] + 600):
+        with direct_vm.expect_revert("inconclusive recheck cap reached"):
+            contract.evaluate_revision(entry_id, entry_id + ":r1")
+    assert contract.get_revision_attempt_count(entry_id + ":r1") == 3
+
+
+def test_deadline_boundary_blocks_assessment_and_revision_writes(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "5" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    deadline = json.loads(contract.get_program(program_id))["deadline"]
+
+    direct_vm.sender = direct_bob
+    with _warp_to(direct_vm, deadline):
+        with direct_vm.expect_revert("program deadline has passed"):
+            contract.evaluate_revision(entry_id, entry_id + ":r1")
+        with direct_vm.expect_revert("program deadline has passed"):
+            contract.submit_revision(entry_id, "6" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "b" * 32)
+    assert contract.get_revision_attempt_count(entry_id + ":r1") == 0
+    assert contract.get_entry_revision_count(entry_id) == 1
+
+
+def test_duplicate_snapshot_and_reused_nonce_are_rejected_before_write(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "7" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob)
+    _negative_llm(direct_vm)
+    direct_vm.sender = direct_bob
+    contract.evaluate_revision(entry_id, entry_id + ":r1")
+
+    with direct_vm.expect_revert("snapshot has already been filed"):
+        contract.submit_revision(entry_id, sha, '["docs/usage.md","src/runtime.py"]', '{"1":["docs/usage.md"],"0":["src/runtime.py"]}', "b" * 32)
+    with direct_vm.expect_revert("fresh claim nonce"):
+        contract.submit_revision(entry_id, "a" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "a" * 32)
+    assert contract.get_entry_revision_count(entry_id) == 1
+    assert json.loads(contract.get_entry(entry_id))["revision_count"] == 1
+
+
+def test_four_revision_cap_is_enforced_after_distinct_conclusive_results(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    current_sha = "a" * 40
+    current_nonce = "a" * 32
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, current_sha, current_nonce)
+
+    for revision_number in range(1, 5):
+        direct_vm.clear_mocks()
+        configure_common_web(direct_vm, current_sha, program_id, direct_bob, nonce=current_nonce)
+        _negative_llm(direct_vm)
+        direct_vm.sender = direct_bob
+        result_id = contract.evaluate_revision(entry_id, entry_id + ":r" + str(revision_number))
+        assert json.loads(contract.get_review(result_id))["outcome"] == "NOT_ESTABLISHED"
+        if revision_number < 4:
+            current_sha = format(revision_number + 1, "x") * 40
+            current_nonce = format(revision_number + 1, "x") * 32
+            contract.submit_revision(entry_id, current_sha, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', current_nonce)
+
+    with direct_vm.expect_revert("revision cap reached"):
+        contract.submit_revision(entry_id, "f" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "f" * 32)
+    assert contract.get_entry_revision_count(entry_id) == 4
+    assert json.loads(contract.get_entry(entry_id))["revision_count"] == 4

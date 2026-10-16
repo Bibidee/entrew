@@ -2,6 +2,10 @@
 
 Check boxes only reflect observed work. Open items are listed explicitly.
 
+The deployment checkboxes below describe the historical source release recorded in `DEPLOYMENT.md`. They do not indicate that the modified contract on `audit/full-remediation` has been deployed or live-tested. Production has not been changed during this audit.
+
+For the current branch, local `npm run check`, `npm run test:e2e`, CLI/network checks, and `npm audit` passed as recorded in `../../docs/TEST_RESULTS.md`. Live deployment and lifecycle items for this contract source remain unchecked.
+
 ## Phase 0: scope and research
 
 - [x] Inspect the supplied handoff and repository source.
@@ -57,4 +61,4 @@ Check boxes only reflect observed work. Open items are listed explicitly.
 - [ ] Independently scan the latest production JS bundle for stale addresses.
 - [ ] Complete the full hostile audit and held-out semantic benchmark.
 
-**Status:** the requested deployment, production configuration and real positive/negative lifecycle are complete. Broader adversarial and semantic release coverage remains incomplete. Do not treat checked lifecycle items as evidence for pending cases.
+**Historical release status:** the deployment, production configuration and real positive/negative lifecycle recorded here completed for the previous source. Broader adversarial and semantic release coverage remained incomplete. The remediation source has not been deployed; do not treat checked lifecycle items as evidence for it.

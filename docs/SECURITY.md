@@ -7,6 +7,7 @@
 - Every evaluation and revision checks the contract timestamp against the fixed deadline. The cutoff is `now >= deadline`.
 - At most four distinct revision snapshots are allowed. A conclusive snapshot cannot be reviewed twice. An inconclusive snapshot can be retried twice after a ten-minute cooldown.
 - Evidence path, source size, JSON shape, file fingerprint, provenance, criterion vector, and page bounds are checked before state writes.
+- A raw GitHub marker 404 is ambiguous and cannot prove a missing marker. Only the GitHub API 404 after verified repository and commit identity is classified as a confirmed missing marker. Provider failures and malformed source responses remain nonconclusive; raw fallback does not turn an ambiguous response into a provenance mismatch.
 - A qualification is appended to the roster only from contract state after every criterion is `MET` and provenance is revision-bound.
 
 ## Untrusted evidence
@@ -17,7 +18,7 @@ The app does not claim the wallet maps to a human, that the applicant authored t
 
 ## Live verification
 
-The contract was deployed to Studionet `61999`. Its `getContractCode` readback hashes to the same SHA-256 as the tracked source. A real positive fixture was finalized as `QUALIFIED` with all criteria `MET` and included in the qualified roster. A real negative fixture was finalized as `NOT_ESTABLISHED` with a `NOT_MET` criterion and omitted from that roster. Both outcomes had revision-bound provenance and canonical state readback. Exact hashes and receipt notes are in `docs/DEPLOYMENT.md`.
+The prior production contract was deployed to Studionet `61999`. Its `getContractCode` readback hashed to the same SHA-256 as the then-tracked source. A real positive fixture was finalized as `QUALIFIED` with all criteria `MET` and included in the qualified roster. A real negative fixture was finalized as `NOT_ESTABLISHED` with a `NOT_MET` criterion and omitted from that roster. Both outcomes had revision-bound provenance and canonical state readback. The current remediation branch changes contract source, so these results do not verify the changed source. No deployment or production configuration change has been made for this branch. Historical hashes and receipt notes are in `docs/DEPLOYMENT.md`.
 
 The deployment and negative assessment validator receipts reported cancellation/error after consensus quorum was reached. SDK finality and canonical state were confirmed; this receipt detail is retained rather than described as clean unanimous validator success.
 

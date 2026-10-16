@@ -35,6 +35,18 @@ ISSUE_CODES = (
     "EVIDENCE_BUDGET_EXCEEDED",
     "VALIDATOR_OUTPUT_INVALID",
     "EVIDENCE_UNAVAILABLE",
+    "GITHUB_RATE_LIMITED",
+    "GITHUB_403_AMBIGUOUS",
+    "PROVIDER_HTTP_ERROR",
+    "PROVIDER_TRANSPORT_ERROR",
+    "PROVIDER_TRANSIENT_FAILURE",
+    "PROVIDER_REDIRECTED",
+    "PROVIDER_RESPONSE_INVALID",
+    "PROVIDER_RESPONSE_TOO_LARGE",
+    "SOURCE_ENCODING_INVALID",
+    "SOURCE_TOO_LARGE",
+    "SOURCE_BINARY_INVALID",
+    "SOURCE_FILE_UNAVAILABLE",
 )
 GITHUB_API = "https://api.github.com"
 GITHUB_RAW = "https://raw.githubusercontent.com"
@@ -191,34 +203,50 @@ def _read_body(response):
     body = response.body
     if isinstance(body, bytes):
         body = body.decode("utf-8")
-    if not isinstance(body, str) or len(body) > MAX_RESPONSE_CHARS:
-        raise ValueError("provider response is missing or too large")
+    if not isinstance(body, str):
+        raise ValueError("provider response body is invalid")
+    if len(body) > MAX_RESPONSE_CHARS:
+        raise ValueError("provider response exceeds size limit")
     return body
 
 
 def _fetch_response(url):
     try:
         response = gl.nondet.web.get(url, headers=GITHUB_HEADERS)
-        final_url = getattr(response, "url", url)
-        if final_url != url:
-            return {"availability": "INVALID", "status": 0, "body": ""}
-        status_code = getattr(response, "status_code", None)
-        if status_code is None:
-            # Keep compatibility with Direct Mode response doubles while using
-            # GenVM's documented HTTPResponse.status_code in live execution.
-            status_code = getattr(response, "status", None)
-        status = int(status_code)
-        body = _read_body(response)
     except Exception:
-        return {"availability": "INVALID", "status": 0, "body": ""}
-    if status == 200:
-        return {"availability": "OK", "status": status, "body": body}
-    return {"availability": "HTTP_ERROR", "status": status, "body": ""}
+        return {"availability": "TRANSPORT_ERROR", "status": 0, "body": ""}
+
+    if getattr(response, "url", url) != url:
+        return {"availability": "REDIRECTED", "status": 0, "body": ""}
+    status_code = getattr(response, "status_code", None)
+    if status_code is None:
+        # Keep compatibility with Direct Mode response doubles while using
+        # GenVM's documented HTTPResponse.status_code in live execution.
+        status_code = getattr(response, "status", None)
+    try:
+        status = int(status_code)
+    except Exception:
+        return {"availability": "INVALID_RESPONSE", "status": 0, "body": ""}
+    if status != 200:
+        return {"availability": "HTTP_ERROR", "status": status, "body": ""}
+
+    try:
+        body = _read_body(response)
+    except UnicodeDecodeError:
+        return {"availability": "INVALID_ENCODING", "status": status, "body": ""}
+    except ValueError as error:
+        availability = "RESPONSE_TOO_LARGE" if "size limit" in str(error) else "INVALID_RESPONSE"
+        return {"availability": availability, "status": status, "body": ""}
+    except Exception:
+        return {"availability": "INVALID_RESPONSE", "status": status, "body": ""}
+    return {"availability": "OK", "status": status, "body": body}
 
 
 def _fetch_json(url):
     response = _fetch_response(url)
     if response["availability"] != "OK":
+        if response["availability"] == "INVALID_ENCODING":
+            response["availability"] = "MALFORMED_JSON"
         return {"availability": response["availability"], "status": response["status"], "data": {}}
     try:
         data = _strict_json(response["body"], MAX_RESPONSE_CHARS)
@@ -226,14 +254,54 @@ def _fetch_json(url):
             raise ValueError("expected object")
         return {"availability": "OK", "status": 200, "data": data}
     except Exception:
-        return {"availability": "INVALID", "status": 200, "data": {}}
+        return {"availability": "MALFORMED_JSON", "status": 200, "data": {}}
+
+
+def _provider_issue_code(availability, status=0):
+    if availability == "HTTP_ERROR":
+        if status == 429:
+            return "GITHUB_RATE_LIMITED"
+        if status == 403:
+            # 403 can mean secondary rate limiting or unavailable access;
+            # the HTTPResponse API does not expose rate-limit headers here.
+            return "GITHUB_403_AMBIGUOUS"
+        if status >= 500:
+            return "PROVIDER_TRANSIENT_FAILURE"
+        return "PROVIDER_HTTP_ERROR"
+    if availability == "TRANSPORT_ERROR":
+        return "PROVIDER_TRANSPORT_ERROR"
+    if availability == "REDIRECTED":
+        return "PROVIDER_REDIRECTED"
+    if availability == "RESPONSE_TOO_LARGE":
+        return "PROVIDER_RESPONSE_TOO_LARGE"
+    if availability == "SOURCE_ENCODING_INVALID":
+        return "SOURCE_ENCODING_INVALID"
+    if availability == "SOURCE_TOO_LARGE":
+        return "SOURCE_TOO_LARGE"
+    if availability == "SOURCE_BINARY_INVALID":
+        return "SOURCE_BINARY_INVALID"
+    if availability in ("INVALID_RESPONSE", "MALFORMED_JSON", "INVALID_ENCODING"):
+        return "PROVIDER_RESPONSE_INVALID"
+    return "PROVIDER_HTTP_ERROR"
 
 
 def _fetch_text(url):
     response = _fetch_response(url)
+    if response["availability"] == "INVALID_ENCODING":
+        response["availability"] = "SOURCE_ENCODING_INVALID"
     if response["availability"] != "OK":
         return {"availability": response["availability"], "status": response["status"], "body": ""}
     return response
+
+
+def _validate_source_content(content):
+    if not isinstance(content, str):
+        return {"availability": "INVALID_RESPONSE", "content": ""}
+    if "\x00" in content:
+        return {"availability": "SOURCE_BINARY_INVALID", "content": ""}
+    if len(content) > MAX_FILE_CHARS:
+        return {"availability": "SOURCE_TOO_LARGE", "content": ""}
+    return {"availability": "OK", "content": content}
 
 
 def _raw_url(owner, repo, commit_sha, path):
@@ -252,34 +320,46 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
     if not use_raw:
         repo_result = _fetch_json(_api_url(owner, repo_name, ""))
         if repo_result["availability"] != "OK":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "REPOSITORY_UNAVAILABLE", full_repo, commit_sha)
+            issue = "REPOSITORY_UNAVAILABLE" if repo_result["availability"] == "HTTP_ERROR" and repo_result["status"] == 404 else _provider_issue_code(repo_result["availability"], repo_result["status"])
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
         if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
             return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
 
         commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
         if commit_result["availability"] != "OK":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "COMMIT_UNAVAILABLE", full_repo, commit_sha)
+            issue = "COMMIT_UNAVAILABLE" if commit_result["availability"] == "HTTP_ERROR" and commit_result["status"] == 404 else _provider_issue_code(commit_result["availability"], commit_result["status"])
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
         if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
             return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
 
     if use_raw:
         marker_result = _fetch_text(_raw_url(owner, repo_name, commit_sha, MARKER_PATH))
         if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
-            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
-        if marker_result["availability"] != "OK":
+            # raw.githubusercontent.com does not prove repository or commit identity.
+            # Its 404 is ambiguous, so it must not become a conclusive rejection.
             return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
+        if marker_result["availability"] != "OK":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
         marker_text = marker_result["body"]
     else:
         marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
         if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
             return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
         if marker_result["availability"] != "OK":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
+        if marker_result["data"].get("type") != "file" or marker_result["data"].get("encoding") != "base64":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
         try:
-            marker_bytes = base64.b64decode(marker_result["data"].get("content", "").encode("ascii"), validate=True)
-            marker_text = marker_bytes.decode("utf-8")
+            marker_content = marker_result["data"].get("content", "")
+            if not isinstance(marker_content, str):
+                raise ValueError("marker content must be text")
+            marker_bytes = base64.b64decode(marker_content.encode("ascii"), validate=True)
         except Exception:
-            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_INVALID", full_repo, commit_sha)
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+        try:
+            marker_text = marker_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "SOURCE_ENCODING_INVALID", full_repo, commit_sha)
 
     try:
         marker = _strict_json(marker_text, 2000)
@@ -304,55 +384,79 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
     file_fingerprints = []
     unavailable_paths = set()
     path_classifications = {}
+    unavailable_issue_codes = []
     total_chars = 0
     for path in snapshot["evidence_paths"]:
         if use_raw:
             result = _fetch_text(_raw_url(owner, repo_name, commit_sha, path))
             if result["availability"] != "OK":
                 unavailable_paths.add(path)
-                if result["availability"] == "HTTP_ERROR" and result["status"] == 404:
-                    path_classifications[path] = "INSUFFICIENT"
-                else:
-                    path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] == "HTTP_ERROR" else "INVALID_RESPONSE"
+                # A raw-host 404 does not prove that this path is absent from
+                # the claimed repository/commit. Keep it inconclusive.
+                path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] not in ("SOURCE_ENCODING_INVALID", "RESPONSE_TOO_LARGE", "INVALID_RESPONSE") else "INVALID_RESPONSE"
+                unavailable_issue_codes.append(_provider_issue_code(result["availability"], result["status"]))
                 continue
-            try:
-                content = result["body"]
-                if "\x00" in content or len(content) > MAX_FILE_CHARS:
-                    raise ValueError("binary or oversized source")
-                total_chars += len(content)
-                if total_chars > MAX_TOTAL_CHARS:
-                    raise ValueError("total evidence exceeds bound")
-                digest = _hash_text(content)
-                evidence[path] = {"content": content, "sha256": digest}
-                path_classifications[path] = "REVISION_BOUND"
-            except Exception:
+            checked = _validate_source_content(result["body"])
+            if checked["availability"] != "OK":
                 unavailable_paths.add(path)
-                path_classifications[path] = "INSUFFICIENT"
+                path_classifications[path] = "INVALID_RESPONSE"
+                unavailable_issue_codes.append(_provider_issue_code(checked["availability"], result["status"]))
+                continue
+            content = checked["content"]
+            total_chars += len(content)
+            digest = _hash_text(content)
+            evidence[path] = {"content": content, "sha256": digest}
+            path_classifications[path] = "REVISION_BOUND"
             continue
 
         result = _fetch_json(_api_url(owner, repo_name, "contents/" + path + "?ref=" + commit_sha))
         if result["availability"] != "OK":
             unavailable_paths.add(path)
-            path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] == "HTTP_ERROR" else "INVALID_RESPONSE"
+            if result["availability"] == "HTTP_ERROR" and result["status"] == 404:
+                path_classifications[path] = "INSUFFICIENT"
+                unavailable_issue_codes.append("SOURCE_FILE_UNAVAILABLE")
+            else:
+                path_classifications[path] = "PROVIDER_UNAVAILABLE"
+                unavailable_issue_codes.append(_provider_issue_code(result["availability"], result["status"]))
+            continue
+        if not isinstance(result["data"].get("type"), str):
+            unavailable_paths.add(path)
+            path_classifications[path] = "PROVIDER_UNAVAILABLE"
+            unavailable_issue_codes.append("PROVIDER_RESPONSE_INVALID")
             continue
         if result["data"].get("type") != "file":
             unavailable_paths.add(path)
             path_classifications[path] = "INSUFFICIENT"
+            unavailable_issue_codes.append("SOURCE_FILE_UNAVAILABLE")
             continue
         try:
-            decoded = base64.b64decode(result["data"].get("content", "").encode("ascii"), validate=True)
-            content = decoded.decode("utf-8")
-            if "\x00" in content or len(content) > MAX_FILE_CHARS:
-                raise ValueError("binary or oversized source")
-            total_chars += len(content)
-            if total_chars > MAX_TOTAL_CHARS:
-                raise ValueError("total evidence exceeds bound")
-            digest = _hash_text(content)
-            evidence[path] = {"content": content, "sha256": digest}
-            path_classifications[path] = "REVISION_BOUND"
+            encoded = result["data"].get("content", "")
+            if not isinstance(encoded, str) or result["data"].get("encoding") != "base64":
+                raise ValueError("invalid encoded source response")
+            decoded = base64.b64decode(encoded.encode("ascii"), validate=True)
         except Exception:
             unavailable_paths.add(path)
-            path_classifications[path] = "INSUFFICIENT"
+            path_classifications[path] = "INVALID_RESPONSE"
+            unavailable_issue_codes.append("PROVIDER_RESPONSE_INVALID")
+            continue
+        try:
+            content = decoded.decode("utf-8")
+        except UnicodeDecodeError:
+            unavailable_paths.add(path)
+            path_classifications[path] = "INVALID_RESPONSE"
+            unavailable_issue_codes.append("SOURCE_ENCODING_INVALID")
+            continue
+        checked = _validate_source_content(content)
+        if checked["availability"] != "OK":
+            unavailable_paths.add(path)
+            path_classifications[path] = "INVALID_RESPONSE"
+            unavailable_issue_codes.append(_provider_issue_code(checked["availability"], result["status"]))
+            continue
+        content = checked["content"]
+        total_chars += len(content)
+        digest = _hash_text(content)
+        evidence[path] = {"content": content, "sha256": digest}
+        path_classifications[path] = "REVISION_BOUND"
 
     for path in snapshot["evidence_paths"]:
         file_fingerprints.append({
@@ -406,7 +510,7 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
     output_rows.sort(key=lambda row: row["index"])
     return {
         "provenance": "INSUFFICIENT" if unavailable_paths else "REVISION_BOUND",
-        "issue_code": "EVIDENCE_UNAVAILABLE" if unavailable_paths else "NONE",
+        "issue_code": (unavailable_issue_codes[0] if unavailable_issue_codes else "EVIDENCE_UNAVAILABLE") if unavailable_paths else "NONE",
         "repo": full_repo,
         "commit_sha": commit_sha,
         "marker_sha256": marker_digest,

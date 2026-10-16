@@ -2,7 +2,7 @@
 
 ENTREW is a backendless public review registry for developer programs. Organizers publish immutable two- or three-criterion requirements and deadlines. Applicants submit a public GitHub repository, full commit SHA, bounded evidence paths, and a same-revision `.entrew/claim.json` marker. GenLayer validators independently retrieve and assess the bounded evidence. A contract outcome is only visible after finalized successful execution and canonical state readback.
 
-The V1 registry is deployed on GenLayer Studionet and the production frontend is live at [the-entrew.vercel.app](https://the-entrew.vercel.app). A real positive and negative fixture lifecycle has been executed and read back from canonical contract state. See [deployment evidence](docs/DEPLOYMENT.md) and [validation results](docs/TEST_RESULTS.md). The checked-in `.env.example` intentionally contains no live address; configure the address only in the intended deployment environment.
+The V1 registry is deployed on GenLayer Studionet and the production frontend is live at [the-entrew.vercel.app](https://the-entrew.vercel.app). A real positive and negative fixture lifecycle was executed against the previously deployed contract and read back from canonical state. The current remediation branch changes contract source; that source has **not** been deployed, and production configuration has not been changed. Historical deployment evidence does not verify the modified contract. See [deployment evidence](docs/DEPLOYMENT.md) and [validation results](docs/TEST_RESULTS.md). The checked-in `.env.example` intentionally contains no live address; configure the address only in the intended deployment environment.
 
 ## Source layout
 
@@ -24,7 +24,7 @@ Install the pinned JavaScript and Python test dependencies, then run:
 
 ```powershell
 npm ci
-python -m pip install -r requirements-test.txt
+py -3.13 -m pip install -r requirements-test.txt
 npx playwright install chromium
 npm run cli:local-version
 npm run network:check
@@ -32,6 +32,8 @@ npm run check
 npm run test:e2e
 npm audit
 ```
+
+The Direct Mode test dependency requires Python 3.12 or newer. On Windows, use the Python launcher with a compatible version as shown above.
 
 `npm run check` runs typecheck, lint, source tests, Python policy and mutation tests, Direct Mode contract tests, and the static production build. `npm run test:e2e` covers browser routes, responsiveness, wallet selection and accessibility in test configurations. Mock-wallet checks do not establish live wallet behavior; current live evidence and pending checks are called out in the validation record.
 

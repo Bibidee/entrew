@@ -6,6 +6,7 @@ const usesLocalPreview = new URL(baseURL).hostname === "127.0.0.1" || new URL(ba
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  workers: process.env.CI ? 2 : 1,
   reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },
   projects: [
