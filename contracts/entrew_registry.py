@@ -37,6 +37,7 @@ ISSUE_CODES = (
     "EVIDENCE_UNAVAILABLE",
 )
 GITHUB_API = "https://api.github.com"
+GITHUB_RAW = "https://raw.githubusercontent.com"
 GITHUB_HEADERS = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -195,12 +196,12 @@ def _read_body(response):
     return body
 
 
-def _fetch_json(url):
-    response = gl.nondet.web.get(url, headers=GITHUB_HEADERS)
+def _fetch_response(url):
     try:
+        response = gl.nondet.web.get(url, headers=GITHUB_HEADERS)
         final_url = getattr(response, "url", url)
         if final_url != url:
-            return {"availability": "INVALID", "status": 0, "data": {}}
+            return {"availability": "INVALID", "status": 0, "body": ""}
         status_code = getattr(response, "status_code", None)
         if status_code is None:
             # Keep compatibility with Direct Mode response doubles while using
@@ -209,16 +210,220 @@ def _fetch_json(url):
         status = int(status_code)
         body = _read_body(response)
     except Exception:
-        return {"availability": "INVALID", "status": 0, "data": {}}
+        return {"availability": "INVALID", "status": 0, "body": ""}
     if status == 200:
+        return {"availability": "OK", "status": status, "body": body}
+    return {"availability": "HTTP_ERROR", "status": status, "body": ""}
+
+
+def _fetch_json(url):
+    response = _fetch_response(url)
+    if response["availability"] != "OK":
+        return {"availability": response["availability"], "status": response["status"], "data": {}}
+    try:
+        data = _strict_json(response["body"], MAX_RESPONSE_CHARS)
+        if not isinstance(data, dict):
+            raise ValueError("expected object")
+        return {"availability": "OK", "status": 200, "data": data}
+    except Exception:
+        return {"availability": "INVALID", "status": 200, "data": {}}
+
+
+def _fetch_text(url):
+    response = _fetch_response(url)
+    if response["availability"] != "OK":
+        return {"availability": response["availability"], "status": response["status"], "body": ""}
+    return response
+
+
+def _raw_url(owner, repo, commit_sha, path):
+    # owner/repo/path have been canonicalized and the SHA has been validated.
+    return GITHUB_RAW + "/" + owner + "/" + repo + "/" + commit_sha + "/" + path
+
+
+def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
+    snapshot = _strict_json(snapshot_json)
+    criteria = _strict_json(criteria_json)
+    owner = snapshot["owner"]
+    repo_name = snapshot["repo"]
+    full_repo = owner + "/" + repo_name
+    commit_sha = snapshot["commit_sha"]
+
+    if not use_raw:
+        repo_result = _fetch_json(_api_url(owner, repo_name, ""))
+        if repo_result["availability"] != "OK":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "REPOSITORY_UNAVAILABLE", full_repo, commit_sha)
+        if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
+            return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
+
+        commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
+        if commit_result["availability"] != "OK":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "COMMIT_UNAVAILABLE", full_repo, commit_sha)
+        if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
+            return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
+
+    if use_raw:
+        marker_result = _fetch_text(_raw_url(owner, repo_name, commit_sha, MARKER_PATH))
+        if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
+            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
+        if marker_result["availability"] != "OK":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
+        marker_text = marker_result["body"]
+    else:
+        marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
+        if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
+            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
+        if marker_result["availability"] != "OK":
+            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
         try:
-            data = _strict_json(body, MAX_RESPONSE_CHARS)
-            if not isinstance(data, dict):
-                raise ValueError("expected object")
-            return {"availability": "OK", "status": status, "data": data}
+            marker_bytes = base64.b64decode(marker_result["data"].get("content", "").encode("ascii"), validate=True)
+            marker_text = marker_bytes.decode("utf-8")
         except Exception:
-            return {"availability": "INVALID", "status": status, "data": {}}
-    return {"availability": "HTTP_ERROR", "status": status, "data": {}}
+            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_INVALID", full_repo, commit_sha)
+
+    try:
+        marker = _strict_json(marker_text, 2000)
+        expected_marker_keys = {"program_id", "wallet", "repository", "challenge_nonce"}
+        if not isinstance(marker, dict) or set(marker.keys()) != expected_marker_keys:
+            raise ValueError("invalid marker schema")
+        if marker["program_id"] != snapshot["program_id"]:
+            raise ValueError("program mismatch")
+        if str(marker["wallet"]).lower() != snapshot["applicant"].lower():
+            raise ValueError("wallet mismatch")
+        marker_owner, marker_repo = marker["repository"].split("/", 1)
+        marker_owner, marker_repo = _canonical_repo(marker_owner, marker_repo)
+        if marker_owner + "/" + marker_repo != full_repo:
+            raise ValueError("repository mismatch")
+        if marker["challenge_nonce"] != snapshot["claim_nonce"]:
+            raise ValueError("nonce mismatch")
+        marker_digest = _hash_text(marker_text)
+    except Exception:
+        return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_INVALID", full_repo, commit_sha)
+
+    evidence = {"mapping": snapshot["evidence_mappings"]}
+    file_fingerprints = []
+    unavailable_paths = set()
+    path_classifications = {}
+    total_chars = 0
+    for path in snapshot["evidence_paths"]:
+        if use_raw:
+            result = _fetch_text(_raw_url(owner, repo_name, commit_sha, path))
+            if result["availability"] != "OK":
+                unavailable_paths.add(path)
+                if result["availability"] == "HTTP_ERROR" and result["status"] == 404:
+                    path_classifications[path] = "INSUFFICIENT"
+                else:
+                    path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] == "HTTP_ERROR" else "INVALID_RESPONSE"
+                continue
+            try:
+                content = result["body"]
+                if "\x00" in content or len(content) > MAX_FILE_CHARS:
+                    raise ValueError("binary or oversized source")
+                total_chars += len(content)
+                if total_chars > MAX_TOTAL_CHARS:
+                    raise ValueError("total evidence exceeds bound")
+                digest = _hash_text(content)
+                evidence[path] = {"content": content, "sha256": digest}
+                path_classifications[path] = "REVISION_BOUND"
+            except Exception:
+                unavailable_paths.add(path)
+                path_classifications[path] = "INSUFFICIENT"
+            continue
+
+        result = _fetch_json(_api_url(owner, repo_name, "contents/" + path + "?ref=" + commit_sha))
+        if result["availability"] != "OK":
+            unavailable_paths.add(path)
+            path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] == "HTTP_ERROR" else "INVALID_RESPONSE"
+            continue
+        if result["data"].get("type") != "file":
+            unavailable_paths.add(path)
+            path_classifications[path] = "INSUFFICIENT"
+            continue
+        try:
+            decoded = base64.b64decode(result["data"].get("content", "").encode("ascii"), validate=True)
+            content = decoded.decode("utf-8")
+            if "\x00" in content or len(content) > MAX_FILE_CHARS:
+                raise ValueError("binary or oversized source")
+            total_chars += len(content)
+            if total_chars > MAX_TOTAL_CHARS:
+                raise ValueError("total evidence exceeds bound")
+            digest = _hash_text(content)
+            evidence[path] = {"content": content, "sha256": digest}
+            path_classifications[path] = "REVISION_BOUND"
+        except Exception:
+            unavailable_paths.add(path)
+            path_classifications[path] = "INSUFFICIENT"
+
+    for path in snapshot["evidence_paths"]:
+        file_fingerprints.append({
+            "path": path,
+            "sha256": evidence[path]["sha256"] if path in evidence else "",
+            "classification": path_classifications.get(path, "INSUFFICIENT"),
+        })
+
+    if total_chars > MAX_TOTAL_CHARS:
+        return _unverifiable(criteria, "INSUFFICIENT", "EVIDENCE_BUDGET_EXCEEDED", full_repo, commit_sha, file_fingerprints, marker_digest)
+
+    ready_criteria = []
+    missing_indexes = set()
+    for index, criterion in enumerate(criteria):
+        selected = snapshot["evidence_mappings"].get(str(index), [])
+        if not selected or any(path in unavailable_paths or path not in evidence for path in selected):
+            missing_indexes.add(index)
+        else:
+            ready_criteria.append(criterion)
+
+    prompt_criteria = [criteria[index] for index in range(len(criteria)) if index not in missing_indexes]
+    prompt_mapping = {
+        "mapping": {
+            str(new_index): snapshot["evidence_mappings"][str(original_index)]
+            for new_index, original_index in enumerate(index for index in range(len(criteria)) if index not in missing_indexes)
+        }
+    }
+    prompt_evidence = {"mapping": prompt_mapping["mapping"]}
+    for path, item in evidence.items():
+        if path != "mapping":
+            prompt_evidence[path] = item
+    output_rows = []
+    if prompt_criteria:
+        prompt = _make_prompt(prompt_criteria, prompt_evidence)
+        try:
+            model_output = gl.nondet.exec_prompt(prompt, response_format="json")
+            if isinstance(model_output, dict):
+                model_output = json.dumps(model_output, sort_keys=True, separators=(",", ":"))
+            if not isinstance(model_output, str):
+                raise ValueError("prompt result is not text")
+            reduced_mapping = prompt_mapping["mapping"]
+            reduced = _validate_criterion_vector(model_output, prompt_criteria, reduced_mapping)
+            original_indexes = [index for index in range(len(criteria)) if index not in missing_indexes]
+            for local_index, row in enumerate(reduced):
+                row["index"] = original_indexes[local_index]
+                output_rows.append(row)
+        except Exception:
+            return _unverifiable(criteria, "INSUFFICIENT", "VALIDATOR_OUTPUT_INVALID", full_repo, commit_sha, file_fingerprints, marker_digest)
+    for index in missing_indexes:
+        output_rows.append({"index": index, "status": "UNVERIFIABLE", "evidence_paths": [], "explanation": "Mapped source could not be verified at the pinned revision."})
+    output_rows.sort(key=lambda row: row["index"])
+    return {
+        "provenance": "INSUFFICIENT" if unavailable_paths else "REVISION_BOUND",
+        "issue_code": "EVIDENCE_UNAVAILABLE" if unavailable_paths else "NONE",
+        "repo": full_repo,
+        "commit_sha": commit_sha,
+        "marker_sha256": marker_digest,
+        "files": sorted(file_fingerprints, key=lambda item: item["path"]),
+        "criteria": output_rows,
+    }
+
+
+def _review_snapshot(snapshot_json, criteria_json):
+    result = _review_snapshot_source(snapshot_json, criteria_json)
+    retry_raw = result["provenance"] == "PROVIDER_UNAVAILABLE" or any(
+        item.get("classification") == "PROVIDER_UNAVAILABLE" for item in result.get("files", [])
+    )
+    if not retry_raw:
+        return result
+    raw_result = _review_snapshot_source(snapshot_json, criteria_json, use_raw=True)
+    return raw_result if raw_result["provenance"] != "PROVIDER_UNAVAILABLE" else result
 
 
 def _api_url(owner, repo, suffix):
@@ -266,144 +471,6 @@ def _make_prompt(criteria, evidence):
         "Return exactly one JSON object with only a `criteria` array. Include each index once. Each row must have exactly `index` (integer), `status` (MET, NOT_MET, or UNVERIFIABLE), `evidence_paths` (array of cited bound paths), and `explanation` (plain text <=240 characters). MET and NOT_MET require at least one cited bound path. No markdown or extra keys.\n"
         "Fixed rubric and untrusted evidence JSON follows:\n<data>" + payload + "</data>"
     )
-
-
-def _review_snapshot(snapshot_json, criteria_json):
-    snapshot = _strict_json(snapshot_json)
-    criteria = _strict_json(criteria_json)
-    owner = snapshot["owner"]
-    repo_name = snapshot["repo"]
-    full_repo = owner + "/" + repo_name
-    commit_sha = snapshot["commit_sha"]
-
-    repo_result = _fetch_json(_api_url(owner, repo_name, ""))
-    if repo_result["availability"] != "OK":
-        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "REPOSITORY_UNAVAILABLE", full_repo, commit_sha)
-    if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
-        return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
-
-    commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
-    if commit_result["availability"] != "OK":
-        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "COMMIT_UNAVAILABLE", full_repo, commit_sha)
-    if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
-        return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
-
-    marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
-    if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
-        return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
-    if marker_result["availability"] != "OK":
-        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
-    try:
-        marker_bytes = base64.b64decode(marker_result["data"].get("content", "").encode("ascii"), validate=True)
-        marker_text = marker_bytes.decode("utf-8")
-        marker = _strict_json(marker_text, 2000)
-        expected_marker_keys = {"program_id", "wallet", "repository", "challenge_nonce"}
-        if not isinstance(marker, dict) or set(marker.keys()) != expected_marker_keys:
-            raise ValueError("invalid marker schema")
-        if marker["program_id"] != snapshot["program_id"]:
-            raise ValueError("program mismatch")
-        if str(marker["wallet"]).lower() != snapshot["applicant"].lower():
-            raise ValueError("wallet mismatch")
-        marker_owner, marker_repo = marker["repository"].split("/", 1)
-        marker_owner, marker_repo = _canonical_repo(marker_owner, marker_repo)
-        if marker_owner + "/" + marker_repo != full_repo:
-            raise ValueError("repository mismatch")
-        if marker["challenge_nonce"] != snapshot["claim_nonce"]:
-            raise ValueError("nonce mismatch")
-        marker_digest = _hash_text(marker_text)
-    except Exception:
-        return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_INVALID", full_repo, commit_sha)
-
-    evidence = {"mapping": snapshot["evidence_mappings"]}
-    file_fingerprints = []
-    unavailable_paths = set()
-    path_classifications = {}
-    total_chars = 0
-    for path in snapshot["evidence_paths"]:
-        result = _fetch_json(_api_url(owner, repo_name, "contents/" + path + "?ref=" + commit_sha))
-        if result["availability"] != "OK":
-            unavailable_paths.add(path)
-            path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] == "HTTP_ERROR" else "INVALID_RESPONSE"
-            continue
-        if result["data"].get("type") != "file":
-            unavailable_paths.add(path)
-            path_classifications[path] = "INSUFFICIENT"
-            continue
-        try:
-            decoded = base64.b64decode(result["data"].get("content", "").encode("ascii"), validate=True)
-            content = decoded.decode("utf-8")
-            if "\x00" in content or len(content) > MAX_FILE_CHARS:
-                raise ValueError("binary or oversized source")
-            total_chars += len(content)
-            if total_chars > MAX_TOTAL_CHARS:
-                raise ValueError("total evidence exceeds bound")
-            digest = _hash_text(content)
-            evidence[path] = {"content": content, "sha256": digest}
-            path_classifications[path] = "REVISION_BOUND"
-        except Exception:
-            unavailable_paths.add(path)
-            path_classifications[path] = "INSUFFICIENT"
-
-    for path in snapshot["evidence_paths"]:
-        file_fingerprints.append({
-            "path": path,
-            "sha256": evidence[path]["sha256"] if path in evidence else "",
-            "classification": path_classifications.get(path, "INSUFFICIENT"),
-        })
-
-    if total_chars > MAX_TOTAL_CHARS:
-        return _unverifiable(criteria, "INSUFFICIENT", "EVIDENCE_BUDGET_EXCEEDED", full_repo, commit_sha, file_fingerprints, marker_digest)
-
-    ready_criteria = []
-    missing_indexes = set()
-    for index, criterion in enumerate(criteria):
-        selected = snapshot["evidence_mappings"].get(str(index), [])
-        if not selected or any(path in unavailable_paths or path not in evidence for path in selected):
-            missing_indexes.add(index)
-        else:
-            ready_criteria.append(criterion)
-
-    # The model sees only complete mapped evidence. Missing files remain unknown.
-    prompt_criteria = [criteria[index] for index in range(len(criteria)) if index not in missing_indexes]
-    prompt_mapping = {
-        "mapping": {
-            str(new_index): snapshot["evidence_mappings"][str(original_index)]
-            for new_index, original_index in enumerate(index for index in range(len(criteria)) if index not in missing_indexes)
-        }
-    }
-    prompt_evidence = {"mapping": prompt_mapping["mapping"]}
-    for path, item in evidence.items():
-        if path != "mapping":
-            prompt_evidence[path] = item
-    output_rows = []
-    if prompt_criteria:
-        prompt = _make_prompt(prompt_criteria, prompt_evidence)
-        try:
-            model_output = gl.nondet.exec_prompt(prompt, response_format="json")
-            if isinstance(model_output, dict):
-                model_output = json.dumps(model_output, sort_keys=True, separators=(",", ":"))
-            if not isinstance(model_output, str):
-                raise ValueError("prompt result is not text")
-            reduced_mapping = prompt_mapping["mapping"]
-            reduced = _validate_criterion_vector(model_output, prompt_criteria, reduced_mapping)
-            original_indexes = [index for index in range(len(criteria)) if index not in missing_indexes]
-            for local_index, row in enumerate(reduced):
-                row["index"] = original_indexes[local_index]
-                output_rows.append(row)
-        except Exception:
-            return _unverifiable(criteria, "INSUFFICIENT", "VALIDATOR_OUTPUT_INVALID", full_repo, commit_sha, file_fingerprints, marker_digest)
-    for index in missing_indexes:
-        output_rows.append({"index": index, "status": "UNVERIFIABLE", "evidence_paths": [], "explanation": "Mapped source could not be verified at the pinned revision."})
-    output_rows.sort(key=lambda row: row["index"])
-    return {
-        "provenance": "INSUFFICIENT" if unavailable_paths else "REVISION_BOUND",
-        "issue_code": "EVIDENCE_UNAVAILABLE" if unavailable_paths else "NONE",
-        "repo": full_repo,
-        "commit_sha": commit_sha,
-        "marker_sha256": marker_digest,
-        "files": sorted(file_fingerprints, key=lambda item: item["path"]),
-        "criteria": output_rows,
-    }
 
 
 def _consensus_projection(result):

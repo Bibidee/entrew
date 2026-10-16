@@ -12,7 +12,8 @@ CONTRACT = ROOT / "contracts" / "entrew_registry.py"
 PURE_HELPERS = {
     "_pairs_no_duplicates", "_strict_json", "_hash_text", "_canonical_repo",
     "_canonical_path", "_normalize_snapshot", "_snapshot_digest",
-    "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body", "_fetch_json",
+    "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body",
+    "_fetch_response", "_fetch_json", "_fetch_text", "_raw_url",
 }
 TREE = ast.parse(CONTRACT.read_text(encoding="utf-8"))
 FUNCTIONS = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in PURE_HELPERS]
@@ -21,8 +22,12 @@ NAMESPACE = {
     "hashlib": hashlib,
     "re": re,
     "MAX_EVIDENCE_FILES": 3,
+    "MAX_FILE_CHARS": 12000,
+    "MAX_TOTAL_CHARS": 24000,
     "MAX_RESPONSE_CHARS": 20000,
     "MARKER_PATH": ".entrew/claim.json",
+    "GITHUB_API": "https://api.github.com",
+    "GITHUB_RAW": "https://raw.githubusercontent.com",
     "ISSUE_CODES": ("NONE", "REPOSITORY_UNAVAILABLE", "REPOSITORY_IDENTITY_MISMATCH", "COMMIT_UNAVAILABLE", "COMMIT_IDENTITY_MISMATCH", "CLAIM_MARKER_MISSING", "CLAIM_MARKER_UNAVAILABLE", "CLAIM_MARKER_INVALID", "EVIDENCE_BUDGET_EXCEEDED", "VALIDATOR_OUTPUT_INVALID", "EVIDENCE_UNAVAILABLE"),
 }
 exec(compile(ast.Module(body=FUNCTIONS, type_ignores=[]), str(CONTRACT), "exec"), NAMESPACE)
@@ -41,6 +46,11 @@ class ContractPolicyTests(unittest.TestCase):
 
         FAKE_WEB.response = SimpleNamespace(status=404, body=b"{}", url=url)
         self.assertEqual(fetch(url), {"availability": "HTTP_ERROR", "status": 404, "data": {}})
+
+        fetch_text = NAMESPACE["_fetch_text"]
+        raw_url = "https://raw.githubusercontent.com/example/registry/" + "a" * 40 + "/src/runtime.py"
+        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"def health(): return 'ok'", url=raw_url)
+        self.assertEqual(fetch_text(raw_url), {"availability": "OK", "status": 200, "body": "def health(): return 'ok'"})
 
     def test_repo_is_normalized_and_rejects_url_syntax(self):
         self.assertEqual(NAMESPACE["_canonical_repo"]("Example-Org", "Data_Set"), ("example-org", "data_set"))
