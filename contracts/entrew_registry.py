@@ -201,7 +201,12 @@ def _fetch_json(url):
         final_url = getattr(response, "url", url)
         if final_url != url:
             return {"availability": "INVALID", "status": 0, "data": {}}
-        status = int(response.status)
+        status_code = getattr(response, "status_code", None)
+        if status_code is None:
+            # Keep compatibility with Direct Mode response doubles while using
+            # GenVM's documented HTTPResponse.status_code in live execution.
+            status_code = getattr(response, "status", None)
+        status = int(status_code)
         body = _read_body(response)
     except Exception:
         return {"availability": "INVALID", "status": 0, "data": {}}
