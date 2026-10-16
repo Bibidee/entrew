@@ -28,6 +28,12 @@ This record covers the separately deployed corrected contract only. It does not 
 
 `positive-live-verify.mjs` is read-only. It retains the checksummed contract spelling for Studio's address-sensitive code RPC, while normalizing addresses for comparisons. It verifies exact reviewed/deployed bytes, finalized transaction bindings, GitHub repository/commit/file identity, canonical entry/revision/review data, criterion vector, and roster membership. It does not use a wallet or broadcast a transaction.
 
+## Executed verification
+
+- `node --check release-prep/positive-live-verify.mjs` passed.
+- `node release-prep/positive-live-verify.mjs release-prep/positive-live.2026-10-17.json` passed against the current Studionet RPC and GitHub API. Its verified result is chain `61999`, source hash `b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8`, outcome `QUALIFIED`, criterion vector `[MET, MET]`, provenance `REVISION_BOUND`, and qualified entry `e1`.
+- The parent commit `7fe14f63c63c6299b98a4a72c269c5a522c8c78c` had an already green full CI run: [38976275166](https://github.com/Bibidee/entrew/actions/runs/38976275166). The documentation-only update has its own CI run; its final result is recorded with the PR rather than inferred from the earlier commit.
+
 ## Scope and remaining work
 
 Only the positive lifecycle was authorized and executed. No negative, corrected-revision, unavailable-evidence, unauthorized-action, wallet UI, Vercel production change, or PR merge was performed. The unsuccessful CLI program-publication attempt `0xdf712ac6c124e58424b7ca501383f977b2a5d388ae75b340ac139efa07f7ab6f` is retained as a finalized execution error; it created no program. The successful publication above is the canonical source of `p1`.
