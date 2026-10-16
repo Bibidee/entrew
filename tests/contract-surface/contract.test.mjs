@@ -29,6 +29,10 @@ test("only fixed GitHub API URLs and bounded evidence paths are accepted", () =>
   assert.doesNotMatch(contract, /gl\.nondet\.web\.(?:get|request)\(user_?url/);
   assert.match(contract, /MAX_RESPONSE_CHARS\s*=\s*20000/);
   assert.match(contract, /MAX_TOTAL_CHARS\s*=\s*24000/);
+  assert.match(contract, /MAX_PATH_SEGMENTS\s*=\s*8/);
+  assert.match(contract, /git\/commits\//);
+  assert.match(contract, /git\/trees\//);
+  assert.match(contract, /def _git_tree_blob_binding/);
 });
 
 test("paged indexes read at most 25 individual index keys", () => {

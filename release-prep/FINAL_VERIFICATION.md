@@ -6,13 +6,18 @@
 
 Reviewed the exact PR #6 baseline diff from `main` (`d81ad944a6a89e5713b7f1ca6c224b80e8e56769`) to requested head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f`, plus the consolidated release-candidate changes below and the full contract provenance and lifecycle paths. This record names the immutable starting PR head separately from the current candidate bytes.
 
-Three confirmed defects were corrected in the consolidated release candidate:
+Eight confirmed defects were corrected in the reviewed release candidate:
 
-1. GitHub Contents API marker/evidence responses were not bound to the requested `path` or the bytes represented by Git's blob `sha`. The contract now validates file type, exact path, base64 and Git blob SHA; invalid metadata yields `INCONCLUSIVE` / `PROVIDER_RESPONSE_INVALID`. Four Direct Mode regressions reproduced the prior false qualification and now pass.
+1. GitHub Contents API marker/evidence responses were not bound to the requested `path`, decoded bytes or an exact commit tree. The contract now validates file type, exact path, base64, Git blob SHA, the supplied commit's root tree, and every bounded path component. A valid blob from a different revision now fails closed instead of becoming revision-bound evidence.
 2. The strict Contents decoder rejected GitHub's valid line-wrapped base64 responses. It now accepts only LF or CRLF line wrapping, preserves strict base64 validation for every other character, and still checks the exact Git blob SHA. A Direct Mode regression covers a fully wrapped marker and both wrapped evidence files.
 3. The frontend used `stateStatus: "finalized"`, which the pinned `genlayer-js@1.1.8` ignores. It now requests `TransactionHashVariant.LATEST_FINAL`, with the existing contract-surface test updated to guard that behavior. The live verifier uses the same snapshot setting and the documented finalized code RPC.
+4. Malformed HTTP-200 repository or commit identity bodies could be coerced into a conclusive mismatch. The contract now requires schema-valid canonical repository identity, full commit SHA, and root tree SHA before a mismatch can be conclusive; malformed provider data is `INCONCLUSIVE` / `PROVIDER_RESPONSE_INVALID`.
+5. A deeply segmented evidence path could multiply Git tree requests. Evidence traversal is now capped at eight path segments.
+6. The read-only release verifier could trust a wrong-chain RPC or pass with an empty lifecycle list. It now checks `eth_chainId`, requires the complete named matrix and unauthorized control, and rejects incomplete evidence before any live RPC request.
+7. Transaction hashes were not previously bound to the candidate contract, wallet, decoded method, arguments or full source bytes. The release verifier now decodes finalized Studio calldata and checks those bindings, including deployment bytes and timestamp ordering for unauthorized control.
+8. The benchmark scorer hashed captured responses but allowed row outcomes and validator votes to disagree with the captured content. It now requires a bounded JSON response whose case ID, outcome and validator votes exactly match the row; provider identity remains an external attestation boundary.
 
-No further confirmed defect was found in the contract's repository identity, full commit SHA, marker binding, bounded evidence, outcome aggregation or applicant-only write paths. The deployed-source and live transaction behavior still needs network verification.
+The post-fix review found no further confirmed defect in the contract's repository identity, full commit SHA, marker binding, bounded evidence, outcome aggregation or applicant-only write paths. The deployed-source and live transaction behavior still needs network verification.
 
 ## Source and network identity
 
@@ -20,18 +25,18 @@ No further confirmed defect was found in the contract's repository identity, ful
 |---|---|
 | PR head source SHA-256 at `f33b7d9` | `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` |
 | PR head contract Git blob | `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3` |
-| Consolidated candidate contract SHA-256 | `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b` |
-| Consolidated candidate contract Git blob | `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835` |
+| Consolidated candidate contract SHA-256 | `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e` |
+| Consolidated candidate contract Git blob | `8348ba2282fc062e9fe32e488245d536bd138334` |
 | Studionet configuration | `61999`, `https://studio.genlayer.com/api` |
 | Live RPC response | `0xf22f` (`61999`) |
 | Repository-local GenLayer CLI | `0.39.1` |
 
-`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment command and options were inspected, but the deployment script was not run. The baseline PR head's CI results do not apply to the consolidated candidate until it is pushed and checked by GitHub Actions.
+`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment command and options were inspected, but the deployment script was not run. The earlier PR CI evidence applies only to its named commit; this final audit update must be pushed and checked by GitHub Actions before it is used as CI evidence.
 
 ## Local verification
 
-- `npm run check`: passed typecheck, lint, contract surface 5/5, policy 15/15, mutation 4/4, Direct Mode 22/22, and production build. The Direct Mode suite includes all four provenance metadata regressions and the GitHub line-wrap regression.
-- `npm run test:e2e`: passed 10/10 Playwright checks across desktop and mobile Chromium, six viewport widths, routes, axe checks and wallet-modal simulation.
+- `npm run check`: passed typecheck, lint, contract surface 5/5, release-prep 7/7, policy 17/17, mutation 4/4, Direct Mode 28/28, and production build. Direct Mode includes the raw-fallback, exact-tree, malformed-identity and line-wrap regressions.
+- Browser verification against the exported production build passed 10/10 Playwright checks across desktop and mobile Chromium, six viewport widths, routes, axe checks and wallet-modal simulation. The default dev-server run was tooling-limited at 8/10 by two mobile connection refusals; the stable exported-build run is the recorded result.
 - `npm run audit`: 0 production dependency vulnerabilities.
 - `npm run network:check`: passed contamination scan and live RPC chain check.
 - `npm run cli:local-version`: `0.39.1`.
@@ -54,7 +59,7 @@ The new corpus is independent of the post-prompt fixture file: both case-ID over
 | Accuracy | Not measured |
 | Validator disagreement | Not available; no live validator votes captured |
 
-The scorer rejects mocked outputs and validates actual-evaluator metadata and, for GenLayer runs, Studionet, reviewed source hash, finalized transaction hashes and outcomes. It cannot convert corpus validation into semantic evidence.
+The scorer rejects partial inputs, mismatched corpus digests, response-byte digest mismatches, malformed response JSON, and response/row case, outcome or validator-vote mismatches. For GenLayer it also requires Studionet, the reviewed source hash, finalized transaction hashes and canonical-readback records. It cannot authenticate an arbitrary external evaluator from local capture JSON or convert corpus validation into semantic evidence.
 
 ## Fixture readiness
 
@@ -75,7 +80,7 @@ These are drafts, not executable or publish-ready fixtures. Fill the immutable c
 
 ## Deployment, live verifier and isolated frontend
 
-The read-only live verifier is prepared to attest that finalized deployed source bytes equal the consolidated candidate SHA-256, check finalized transaction execution, read canonical finalized state, and assert repository/commit/wallet/program/nonce/marker/file/outcome/criteria/roster bindings. It can also verify a finalized unauthorized failure left the target entry unchanged. It has syntax and pinned-SDK API validation only; it has not run against a new deployment.
+The read-only live verifier first proves its fixed RPC reports chain `61999`, then attests finalized deployed source bytes against the consolidated candidate SHA-256, checks finalized execution, reads canonical finalized state, and asserts repository/commit/wallet/program/nonce/marker/every-file/outcome/criteria/roster bindings. It requires positive, negative, corrected-r1, corrected-r2, unavailable-evidence and unauthorized-action assertions; an empty matrix cannot pass. It has syntax and offline regression validation only; it has not run against a new deployment.
 
 The frontend smoke harness uses process-only local environment values, refuses the historical production contract address, and checks that each public read targets only the supplied test address with `latest-final`. It has syntax validation only because no new test contract address or live records exist. No `.env`, Vercel production setting, alias or existing production contract was changed.
 

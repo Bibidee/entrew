@@ -72,11 +72,29 @@ def gh_file(path, text, returned_path=None, reported_sha=None, line_wrapped=Fals
     return {"status": 200, "body": json.dumps(body)}
 
 
-def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200, nonce="a" * 32, marker_encoding="base64", marker_path=None, marker_sha=None, marker_line_wrapped=False):
+def gh_tree(entries, tree_sha, truncated=False):
+    return {"status": 200, "body": json.dumps({"sha": tree_sha, "tree": entries, "truncated": truncated})}
+
+
+def response_blob_sha(response, fallback):
+    try:
+        parsed = json.loads(response["body"])
+        sha = parsed.get("sha")
+        return sha if isinstance(sha, str) and len(sha) == 40 else fallback
+    except (KeyError, TypeError, json.JSONDecodeError):
+        return fallback
+
+
+def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200, nonce="a" * 32, marker_encoding="base64", marker_path=None, marker_sha=None, marker_line_wrapped=False, repo_response=None, commit_response=None, tree_blob_overrides=None, tree_truncated=False, tree_sha_overrides=None):
     repo = "example/registry"
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": repo})})
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 200, "body": json.dumps({"sha": sha})})
+    root_tree_sha = "1" * 40
+    marker_tree_sha = "2" * 40
+    source_tree_sha = "3" * 40
+    docs_tree_sha = "4" * 40
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps(repo_response if repo_response is not None else {"full_name": repo})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 200, "body": json.dumps(commit_response if commit_response is not None else {"sha": sha, "tree": {"sha": root_tree_sha}})})
     marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": nonce}
+    marker_blob_sha = git_blob_sha(json.dumps(marker, separators=(",", ":")).encode("utf-8"))
     if marker_status == 200:
         marker_bytes = json.dumps(marker, separators=(",", ":")).encode("utf-8")
         marker_body = {
@@ -87,10 +105,26 @@ def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, s
             "sha": marker_sha if marker_sha is not None else git_blob_sha(marker_bytes),
         }
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": 200, "body": json.dumps(marker_body)})
+        marker_blob_sha = marker_body["sha"]
     else:
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": marker_status, "body": "{}"})
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/src/runtime\.py", source_a or gh_file("src/runtime.py", "def health():\n    return 'ok'\n"))
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/docs/usage\.md", source_b or gh_file("docs/usage.md", "# Runtime health\nCall /health; a valid request returns ok.\n"))
+    source_a = source_a or gh_file("src/runtime.py", "def health():\n    return 'ok'\n")
+    source_b = source_b or gh_file("docs/usage.md", "# Runtime health\nCall /health; a valid request returns ok.\n")
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/src/runtime\.py", source_a)
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/docs/usage\.md", source_b)
+    tree_blob_overrides = tree_blob_overrides or {}
+    tree_sha_overrides = tree_sha_overrides or {}
+    marker_blob_sha = tree_blob_overrides.get(".entrew/claim.json", marker_blob_sha)
+    source_blob_sha = tree_blob_overrides.get("src/runtime.py", response_blob_sha(source_a, "5" * 40))
+    docs_blob_sha = tree_blob_overrides.get("docs/usage.md", response_blob_sha(source_b, "6" * 40))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/trees/" + root_tree_sha, gh_tree([
+        {"path": ".entrew", "type": "tree", "sha": marker_tree_sha},
+        {"path": "src", "type": "tree", "sha": source_tree_sha},
+        {"path": "docs", "type": "tree", "sha": docs_tree_sha},
+    ], tree_sha_overrides.get(root_tree_sha, root_tree_sha), tree_truncated))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/trees/" + marker_tree_sha, gh_tree([{"path": "claim.json", "type": "blob", "sha": marker_blob_sha}], tree_sha_overrides.get(marker_tree_sha, marker_tree_sha), tree_truncated))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/trees/" + source_tree_sha, gh_tree([{"path": "runtime.py", "type": "blob", "sha": source_blob_sha}], tree_sha_overrides.get(source_tree_sha, source_tree_sha), tree_truncated))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/trees/" + docs_tree_sha, gh_tree([{"path": "usage.md", "type": "blob", "sha": docs_blob_sha}], tree_sha_overrides.get(docs_tree_sha, docs_tree_sha), tree_truncated))
 
 
 def submit(contract, direct_vm, direct_bob, program_id, sha, nonce="a" * 32):
@@ -282,6 +316,112 @@ def test_evidence_metadata_mismatch_is_inconclusive(direct_vm, direct_deploy, di
     assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
     assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
 
+
+def test_marker_blob_outside_exact_commit_tree_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "a" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(
+        direct_vm,
+        sha,
+        program_id,
+        direct_bob,
+        tree_blob_overrides={".entrew/claim.json": git_blob_sha(b'{"repository":"other/revision"}')},
+    )
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "PROVIDER_UNAVAILABLE"
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+def test_evidence_blob_outside_exact_commit_tree_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "b" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(
+        direct_vm,
+        sha,
+        program_id,
+        direct_bob,
+        tree_blob_overrides={"src/runtime.py": git_blob_sha(b"def health():\n    return 'stale'\n")},
+    )
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The documentation states the required status."},
+    ]}))
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files")}
+    assert result["provenance"] == "INSUFFICIENT"
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+    runtime = next(item for item in result["files"] if item["path"] == "src/runtime.py")
+    assert runtime["classification"] == "PROVIDER_UNAVAILABLE"
+    assert not runtime["sha256"]
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+def test_malformed_git_tree_completeness_flag_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "d" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    # A string is not the GitHub API's required boolean completeness flag.
+    # It must not become provenance proof through truthiness coercion.
+    configure_common_web(direct_vm, sha, program_id, direct_bob, tree_truncated="false")
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "PROVIDER_UNAVAILABLE"
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+def test_git_tree_response_sha_mismatch_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "e" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob, tree_sha_overrides={"1" * 40: "f" * 40})
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "PROVIDER_UNAVAILABLE"
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+@pytest.mark.parametrize("repo_response,commit_response", [({}, None), (None, {})])
+def test_malformed_repository_or_commit_identity_response_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob, repo_response, commit_response):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "c" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob, repo_response=repo_response, commit_response=commit_response)
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "PROVIDER_UNAVAILABLE"
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+    assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
 def test_raw_malformed_marker_cannot_reject_without_verified_repository(direct_vm, direct_deploy, direct_alice, direct_bob):
     contract = direct_deploy(str(CONTRACT))
     direct_vm.sender = direct_alice
@@ -311,7 +451,7 @@ def test_raw_positive_marker_and_evidence_cannot_qualify_without_verified_commit
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
 
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 403, "body": "rate limited"})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 403, "body": "rate limited"})
     marker = {
         "program_id": program_id,
         "wallet": wallet_address(direct_bob),
@@ -344,7 +484,7 @@ def test_raw_positive_evidence_cannot_override_commit_sha_mismatch(direct_vm, di
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
 
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 200, "body": json.dumps({"sha": "4" * 40})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 200, "body": json.dumps({"sha": "4" * 40})})
     marker = {
         "program_id": program_id,
         "wallet": wallet_address(direct_bob),

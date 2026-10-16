@@ -29,6 +29,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:contract-surface
+      - run: npm run test:release-prep
       - run: npm run test:python
       - run: npm run test:mutations
       - run: npm run test:direct

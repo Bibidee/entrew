@@ -22,6 +22,7 @@ NAMESPACE = {
     "hashlib": hashlib,
     "re": re,
     "MAX_EVIDENCE_FILES": 3,
+    "MAX_PATH_SEGMENTS": 8,
     "MAX_FILE_CHARS": 12000,
     "MAX_TOTAL_CHARS": 24000,
     "MAX_RESPONSE_CHARS": 20000,
@@ -108,6 +109,9 @@ class ContractPolicyTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 canonical(path)
         self.assertEqual(canonical("src/parser.py"), "src/parser.py")
+        self.assertEqual(canonical("a/b/c/d/e/f/g/h"), "a/b/c/d/e/f/g/h")
+        with self.assertRaises(ValueError):
+            canonical("a/b/c/d/e/f/g/h/i")
 
     def test_snapshot_digest_ignores_path_and_mapping_order(self):
         digest = NAMESPACE["_snapshot_digest"]

@@ -24,7 +24,7 @@ Use six distinct, user-authorized Studionet wallets for a single run. Record pub
 | Unavailable-evidence applicant | pending explicit authorization | Isolate inconclusive evidence and retry/cooldown checks |
 | Unauthorized control | pending explicit authorization | Attempt a forbidden mutation against another wallet's entry |
 
-All six roles use different wallets. The corrected `r1` and `r2` revisions must use the same positive applicant wallet, distinct immutable commits and fresh nonces. The unauthorized control must differ from the target entry's applicant. These role assignments are preparation only; no wallet has been authorized for this run.
+The operator, organizer, positive/corrected applicant, negative applicant, unavailable-evidence applicant and unauthorized control are distinct roles. The corrected `r1` and `r2` revisions intentionally use the same positive applicant wallet, distinct immutable commits and fresh nonces. The unauthorized control must differ from the target entry's applicant. These role assignments are preparation only; no wallet has been authorized for this run.
 
 Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.com/Bibidee/entrew-fixtures) only after confirming its current owner permits new writes for this run. Create a unique branch or isolated paths per run, immutable commit SHA per case, and a fresh marker nonce per applicant. The marker must bind the temporary program ID, matching applicant address, exact fixture repository, and nonce. Do not reuse historical `p1`, commits, or marker evidence as proof for the remediation source.
 
@@ -32,7 +32,7 @@ Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.c
 
 | Step | Execution | Evidence to save | State |
 |---|---|---|---|
-| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Starting PR head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` and blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. Consolidated candidate source SHA-256 `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`; Git blob `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`. Record the final pushed PR commit before deployment. |
+| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Starting PR head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` and blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. Consolidated candidate source SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob `8348ba2282fc062e9fe32e488245d536bd138334`. Record the final pushed PR commit before deployment. |
 | Confirm local CLI `0.39.1`, RPC chain ID `61999`, and no `61997` contamination | Automatable, read-only | CLI version and network-check output | Verified for this branch before deployment |
 | Build/deploy exact contract with the separately authorized operator wallet | CLI can submit; actual deployment requires wallet authorization and a broadcast | Deployment transaction, contract address, finality receipt | Blocked pending explicit deployment authorization |
 | Read canonical chain info and deployed source bytes | Automatable after deployment | Chain ID, `getContractCode` SHA-256 vs pinned source, canonical contract metadata | Blocked until deployment |

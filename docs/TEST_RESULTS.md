@@ -31,7 +31,7 @@ These commit, hash, CI, deployment, and lifecycle records describe the prior pro
 | `py -3.13 -m pip install -r requirements-test.txt` | Passed; pinned `genlayer-test==0.29.2` and `pytest==8.4.2` already satisfied. Python 3.11 is too old for the pinned GenLayer test package. |
 | `npm run cli:local-version` | Passed; repository-local CLI `0.39.1`. |
 | `npm run network:check` | Passed; active-source scan found no `61997` or preview-network reference; RPC returned `61999` (`0xf22f`). |
-| `npm run check` | Passed: TypeScript, ESLint, Node 5/5, Python policy 15/15, mutation probes 4/4, Direct Mode 16/16, and static production build. |
+| `npm run check` | Passed: TypeScript, ESLint, Node contract surface 5/5, release-prep 7/7, Python policy 17/17, mutation probes 4/4, Direct Mode 28/28, and static production build. |
 | `npm run test:e2e` | Passed 10/10 across desktop and mobile Playwright projects. All seven routes passed viewport checks at 320, 375, 390, 768, 1280, and 1440 px; route-level axe checks passed; wallet modal keyboard test passed. |
 | `npm audit` | Passed; 0 vulnerabilities. |
 | GitHub Actions for PR #6 | Run [38915365843](https://github.com/Bibidee/entrew/actions/runs/38915365843) passed all workflow steps on branch commit `44ce1ef71fc699f058f3bf2fa3b6d5671edd2409`, including dependency install, CLI/network checks, all test suites, desktop Playwright, build, and audit. |
@@ -85,8 +85,8 @@ The prior deployment and two live lifecycle proofs remain historical evidence fo
 
 ## Consolidated release candidate — not deployed
 
-- Candidate contract source SHA-256: `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`; Git blob ID: `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`.
-- The candidate extends the f33 baseline with strict Contents-response path/blob binding, GitHub line-wrapped base64 compatibility, and `TransactionHashVariant.LATEST_FINAL` canonical reads. The deploy script pins this exact SHA-256.
-- Fresh local validation passed: `npm ci`; pinned Python dependency verification; CLI `0.39.1`; network check at `61999`; `npm run check` with contract surface 5/5, policy 15/15, mutations 4/4, Direct Mode 22/22 and production build; Playwright 10/10; and `npm audit` with zero production vulnerabilities. GitHub Actions status is recorded only after the consolidated candidate is committed and pushed. Earlier green CI runs above apply to their named historical commits.
+- Candidate contract source SHA-256: `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob ID: `8348ba2282fc062e9fe32e488245d536bd138334`.
+- The candidate extends the f33 baseline with strict Contents-response path/blob/tree binding, GitHub line-wrapped base64 compatibility, `TransactionHashVariant.LATEST_FINAL` canonical reads, finalized transaction calldata/source binding, and structurally bound held-out response captures. The deploy script pins this exact SHA-256.
+- Fresh local validation passed: CLI `0.39.1`; network check at `61999` with no `61997` source contamination; `npm run check` with contract surface 5/5, release-prep 7/7, policy 17/17, mutations 4/4, Direct Mode 28/28 and production build; exported-build Playwright 10/10; and `npm audit` with zero production vulnerabilities. GitHub Actions status is recorded only after the consolidated candidate is committed and pushed. Earlier green CI runs above apply to their named historical commits.
 - No Studionet deployment, wallet transaction, fixture-repository write, Vercel environment change, production redeploy, or merge has been performed for these bytes.
 - The independently authored held-out corpus remains structurally valid but semantically unevaluated (0/40); false qualification, false rejection, inconclusive rate, accuracy, and validator disagreement are not measured.

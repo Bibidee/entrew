@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "test": "node --test tests/contract-surface/contract.test.mjs",
     "test:contract-surface": "node --test tests/contract-surface/contract.test.mjs",
+    "test:release-prep": "node --test tests/release-prep/release-prep.test.mjs tests/release-prep/transaction-evidence.test.mjs",
     "test:python": "python -m unittest discover -s tests/python -p test_*policy.py -v",
     "test:mutations": "python -m unittest discover -s tests/python -p test_mutation_smoke.py -v",
     "test:direct": "node scripts/run-direct-tests.mjs tests/python/test_direct_contract.py -v",
@@ -23,7 +24,7 @@
     "cli:local-version": "node scripts/local-cli-version.mjs",
     "deploy:studionet": "node scripts/deploy-studionet.mjs",
     "audit": "npm audit --omit=dev",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:python && npm run test:mutations && npm run test:direct && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:release-prep && npm run test:python && npm run test:mutations && npm run test:direct && npm run build"
   },
   "dependencies": {
     "genlayer-js": "1.1.8",

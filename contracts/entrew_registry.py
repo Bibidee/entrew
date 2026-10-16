@@ -16,6 +16,7 @@ from genlayer import *
 
 MAX_PAGE = 25
 MAX_EVIDENCE_FILES = 3
+MAX_PATH_SEGMENTS = 8
 MAX_FILE_CHARS = 12000
 MAX_TOTAL_CHARS = 24000
 MAX_RESPONSE_CHARS = 20000
@@ -97,7 +98,8 @@ def _canonical_path(path):
         raise ValueError("encoded or reserved evidence path")
     if not re.fullmatch(r"[A-Za-z0-9._/-]+", path):
         raise ValueError("evidence path contains unsupported characters")
-    if "//" in path or any(part in ("", ".", "..") for part in path.split("/")):
+    parts = path.split("/")
+    if "//" in path or len(parts) > MAX_PATH_SEGMENTS or any(part in ("", ".", "..") for part in parts):
         raise ValueError("evidence path traversal")
     if path == MARKER_PATH:
         raise ValueError("claim marker is not an evidence file")
@@ -323,6 +325,57 @@ def _decode_github_contents_file(data, expected_path):
     return content
 
 
+def _is_git_object_sha(value):
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-fA-F]{40}", value) is not None
+
+
+def _git_tree_blob_binding(owner, repo_name, root_tree_sha, expected_path, expected_blob_sha):
+    # Contents API bytes are decision-bearing only when their blob SHA is an
+    # entry at the requested path in the exact commit's tree. Traverse only
+    # the bounded, canonical path; a malformed or inconsistent tree fails
+    # closed as an invalid provider response.
+    if not _is_git_object_sha(root_tree_sha) or not _is_git_object_sha(expected_blob_sha):
+        return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+    current_tree_sha = root_tree_sha.lower()
+    parts = expected_path.split("/")
+    if len(parts) > MAX_PATH_SEGMENTS:
+        return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+    for index, part in enumerate(parts):
+        result = _fetch_json(_api_url(owner, repo_name, "git/trees/" + current_tree_sha))
+        if result["availability"] != "OK":
+            return result
+        data = result["data"]
+        entries = data.get("tree") if isinstance(data, dict) else None
+        # GitHub must explicitly attest that this non-recursive tree response
+        # is complete. Truthy/falsy coercion would let malformed provider data
+        # become decision-bearing provenance.
+        if (
+            not isinstance(data, dict)
+            or type(data.get("truncated")) is not bool
+            or data["truncated"]
+            or not _is_git_object_sha(data.get("sha"))
+            or data["sha"].lower() != current_tree_sha
+            or not isinstance(entries, list)
+            or any(not isinstance(entry, dict) for entry in entries)
+        ):
+            return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+        matches = [entry for entry in entries if entry.get("path") == part]
+        if len(matches) != 1:
+            return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+        entry = matches[0]
+        entry_sha = entry.get("sha")
+        if not _is_git_object_sha(entry_sha):
+            return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+        if index == len(parts) - 1:
+            if entry.get("type") != "blob" or entry_sha.lower() != expected_blob_sha.lower():
+                return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+        else:
+            if entry.get("type") != "tree":
+                return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+            current_tree_sha = entry_sha.lower()
+    return {"availability": "OK", "status": 200, "data": {}}
+
+
 def _review_snapshot_source(snapshot_json, criteria_json):
     snapshot = _strict_json(snapshot_json)
     criteria = _strict_json(criteria_json)
@@ -337,15 +390,30 @@ def _review_snapshot_source(snapshot_json, criteria_json):
     if repo_result["availability"] != "OK":
         issue = "REPOSITORY_UNAVAILABLE" if repo_result["availability"] == "HTTP_ERROR" and repo_result["status"] == 404 else _provider_issue_code(repo_result["availability"], repo_result["status"])
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
-    if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
+    returned_full_name = repo_result["data"].get("full_name")
+    if not isinstance(returned_full_name, str):
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    try:
+        returned_owner, returned_repo = returned_full_name.split("/", 1)
+        returned_full_name = "/".join(_canonical_repo(returned_owner, returned_repo))
+    except Exception:
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    if returned_full_name != full_repo:
         return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
 
-    commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
+    commit_result = _fetch_json(_api_url(owner, repo_name, "git/commits/" + commit_sha))
     if commit_result["availability"] != "OK":
         issue = "COMMIT_UNAVAILABLE" if commit_result["availability"] == "HTTP_ERROR" and commit_result["status"] == 404 else _provider_issue_code(commit_result["availability"], commit_result["status"])
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
-    if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
+    returned_commit_sha = commit_result["data"].get("sha")
+    if not _is_git_object_sha(returned_commit_sha):
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    if returned_commit_sha.lower() != commit_sha:
         return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
+    commit_tree = commit_result["data"].get("tree")
+    root_tree_sha = commit_tree.get("sha") if isinstance(commit_tree, dict) else None
+    if not _is_git_object_sha(root_tree_sha):
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
 
     marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
     if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
@@ -355,6 +423,9 @@ def _review_snapshot_source(snapshot_json, criteria_json):
     marker_bytes = _decode_github_contents_file(marker_result["data"], MARKER_PATH)
     if marker_bytes is None:
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    marker_tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, MARKER_PATH, marker_result["data"].get("sha"))
+    if marker_tree_binding["availability"] != "OK":
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_tree_binding["availability"], marker_tree_binding["status"]), full_repo, commit_sha)
     try:
         marker_text = marker_bytes.decode("utf-8")
     except UnicodeDecodeError:
@@ -411,6 +482,12 @@ def _review_snapshot_source(snapshot_json, criteria_json):
             unavailable_paths.add(path)
             path_classifications[path] = "INVALID_RESPONSE"
             unavailable_issue_codes.append("PROVIDER_RESPONSE_INVALID")
+            continue
+        tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, path, result["data"].get("sha"))
+        if tree_binding["availability"] != "OK":
+            unavailable_paths.add(path)
+            path_classifications[path] = "PROVIDER_UNAVAILABLE"
+            unavailable_issue_codes.append(_provider_issue_code(tree_binding["availability"], tree_binding["status"]))
             continue
         try:
             content = decoded.decode("utf-8")
