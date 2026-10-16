@@ -1,39 +1,40 @@
 # Validation evidence
 
-This file records checks that actually ran and separates them from authored but unexecuted suites. The original handoff matrix remains at `entrew/docs/TEST_MATRIX.md`.
+This file records checks that actually ran and separates them from authored but unexecuted coverage. The requirement matrix is at `entrew/docs/TEST_MATRIX.md`.
 
-## Source integrity snapshot
+## Release snapshot
 
-- Source commit: `85148b9b58b4a9035c6247e06529057e5fdf441c`
-- SHA-256 of the checkout file `contracts/entrew_registry.py`: `035D5C4357ADB92594D51C4DE74E9078464F5ECD2FE1AF06736B87E73BF74A50`
-- This is a local repository integrity record, not a deployed-source attestation.
+- Verified code commit: `090968f8d6c346f1fa787d9f2685e8bce83f1356`.
+- SHA-256 of `contracts/entrew_registry.py`: `FA351D5423A96FFA3D3EC145E3A7B45A20F9D140BFA7D70F0AAE48B897A5C0AC`.
+- Production alias: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
+- Vercel deployment: [READY · EndQrms6feF8MUdbE9ipUYha76ea](https://vercel.com/bibidees-projects/the-entrew/EndQrms6feF8MUdbE9ipUYha76ea), built from commit `090968f`.
+- GitHub Actions: [CI run 38886003320](https://github.com/Bibidee/entrew/actions/runs/38886003320), `checks` passed on commit `090968f`.
+
+The source hash is a local integrity record. No on-chain source attestation or contract address exists yet.
 
 ## Checks that passed
 
 | Check | Result |
 |---|---|
-| Node contract-surface suite | 5/5 passed with `npm test`. |
-| Python pure-policy and benchmark policy suites | 12/12 passed using the bundled Python runtime. |
-| Mutation smoke | 4/4 pure-policy mutants were killed. Coverage is limited to precedence, unbound evidence, and order-dependent digest behavior; it does not cover VM execution, authorization, or finality. |
-| TypeScript check | `npm run typecheck` passed. The available `tsc` executable resolved outside the project because dependencies were not installed. |
-| Lint | `npm run lint` passed using the available global ESLint executable; it does not establish the pinned dependency environment. |
-| Static source/network contamination scan | Passed: no active-source reference to the prohibited preview/alternate chain ID 61997. The RPC `eth_chainId` probe failed with `fetch failed`, so live chain identity is unverified. |
-| Syntax checks | Python AST parsing passed for the contract and four test modules; benchmark JSON parsed; all authored `.mjs` scripts passed `node --check`. |
+| Full local release check | `npm run check` exited 0: TypeScript, lint, Node contract-surface tests, Python policy tests, mutation smoke, Direct Mode, and static build all passed. |
+| Node contract-surface suite | 5/5 passed. It checks the write surface, independent validator reconstruction, bounded GitHub inputs, pagination, and finality/readback gates in the frontend. |
+| Python policy and benchmark-fixture policy | 12/12 passed, including closed criterion vectors, parser rejection cases, outcome precedence, bounded paths, and digest binding. The 40 fixtures test policy plumbing; they are not a held-out semantic benchmark. |
+| Mutation smoke | 4/4 tested mutants were killed. Coverage is limited to negative precedence, an outcome-override mutant, unbound evidence, and order-dependent digest behavior. |
+| Direct Mode | 6/6 passed locally and in GitHub Actions on the pinned `genlayer-test==0.29.2` harness and GenVM `v0.3.0-rc7` runtime. The downloaded runner archive is SHA-256 checked before use. This does not prove live validator agreement. |
+| Repository-local GenLayer CLI | `npx genlayer --version` and `npm run cli:local-version` both report exactly `0.39.1`. |
+| Network check | Passed: active source scan found no reference to prohibited chain `61997`; RPC `eth_chainId` returned `0xf22f` (`61999`) from `https://studio.genlayer.com/api`. |
+| GitHub Actions | Run `38886003320` passed the full Linux workflow, including install, CLI checks, network check, tests, Direct Mode, desktop Chromium, build, and `npm run audit`. |
+| Dependency audit | `npm audit` found 0 vulnerabilities after adding the missing pinned `esbuild` dependency. |
+| Production build | Vercel deployment `EndQrms6feF8MUdbE9ipUYha76ea` reached `READY`; Next.js generated all eight static application routes. |
+| Browser QA | Production Playwright run passed 10/10 on desktop Chromium and Pixel 7 mobile Chromium. It covered the seven static routes, unconfigured no-fabricated-data state, viewport widths 320/375/390/768/1280/1440, axe on the explorer, and mocked MetaMask/Rabby network selection. |
+| Production reload and console check | Brave direct navigation and reload passed for `/`, `/program?ref=p999`, `/publish`, `/apply?program=p999`, `/evidence?entry=e999`, `/workspace`, and `/activity`. The browser console showed no errors. |
 
-## Partial or blocked checks
+## Not run or still pending
 
-| Check | Result |
-|---|---|
-| Dependency installation | Not completed. No lockfile exists. Offline lockfile generation failed with `ENOTCACHED` for `@axe-core/playwright`; the configured npm registry lookup failed with `ENOTFOUND`. `npm ci` therefore fails because it requires a lockfile. |
-| CLI version | `0.39.1` was reported by a global PATH shim; `npm ls genlayer --depth=0` found no local package. The repo-local CLI guard correctly fails because `.bin/genlayer` is absent. |
-| Production build | Default Turbopack build failed in the Turbopack process/CSS stage. `next build --webpack` compiled and passed TypeScript, but static generation failed at `/apply` with Windows `EPERM` creating `.next/server/app/apply.segments/apply`. The available Next executable was global/unpinned (16.2.10), not the declared 16.4.2. No successful static export is claimed. |
-| Browser smoke | Brave extension was selected, but it timed out loading the local preview at `http://127.0.0.1:3100`. The shell also could not access the local socket due to environment permissions. This was not production browser QA. |
-| Direct Mode | Authored in `tests/python/test_direct_contract.py`, but not run: `pytest` and the required `genlayer-test==0.29.2` environment are unavailable. |
-| Playwright and accessibility | Authored in `tests/e2e/public.spec.ts`, but not run because Playwright dependencies are unavailable. No responsive, reload, keyboard, or axe results are claimed. |
-| Dependency audit | `npm audit` failed with `ENOLOCK`; no lockfile/dependency graph is available. |
+- No Studionet contract deployment, address, deployment transaction, finality result, or source attestation is recorded.
+- No live positive or negative validator lifecycle, finalized roster readback, corrected-revision lifecycle, or public GitHub fixture-marker write exists.
+- Wallet tests use injected mocks. No real wallet signed a transaction, and SDK finality behavior has not been confirmed against a live transaction.
+- The 40-case fixture set was not held out before prompt tuning, and no semantic accuracy, false-qualification, false-nonqualification, or validator-disagreement rate is claimed.
+- The complete A–E matrix is not covered. In particular, the remaining adversarial prompt, cooldown/replay/deadline edges, broader authorization/idempotence, keyboard-only, race/recovery, and full mutation/property requirements remain pending or only partially tested.
 
-## Not run
-
-No semantic evaluator or blinded benchmark was run. The 40 fixtures in `tests/benchmark/cases.json` were authored after the evaluator prompt and are not held out; their presence is not accuracy evidence. No GenVM/validator agreement, adversarial disagreement, latency, or cost results are claimed.
-
-No live Studionet deployment, contract address, transaction hash, source attestation, positive/negative live lifecycle, GitHub fixture marker, production frontend URL, controlled-wallet finality check, or release CI evidence exists. The deployment workflow remains unverified.
+The frontend deliberately remains safe and unconfigured while `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS` is empty. No program counts, entries, or qualification outcomes are fabricated.

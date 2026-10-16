@@ -1,6 +1,6 @@
 # ENTREW — verified-test requirement matrix
 
-This document is a **plan**. None of these cases has yet been executed. Record actual commands, fixture IDs and results only after implementation.
+This document is the V1 requirement matrix. It includes pending requirements and partial coverage; execution evidence is summarized at the end and detailed in `../../docs/TEST_RESULTS.md`. A test passing a subset does not mark an entire row or lifecycle complete.
 
 ## A. Contract/Direct Mode
 
@@ -29,3 +29,25 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 ## Evidence quality categories
 
 `AUTOMATED-PASSED`, `LIVE-PROVEN`, `MANUALLY-PROVEN`, `TOOLING-LIMITED`, `PENDING`, `FAILED`. Every claimed outcome must link to precise test run, transaction or browser log. CI can validate sources but cannot substitute for actual live validator judgments.
+
+## Current execution status — 2026-10-16
+
+### AUTOMATED-PASSED
+
+- `npm run check` passed locally on commit `090968f`; GitHub Actions [run 38886003320](https://github.com/Bibidee/entrew/actions/runs/38886003320) passed on Linux.
+- Node contract-surface: 5/5. Python policy/fixture-policy: 12/12. Mutation smoke: 4/4. GenVM Direct Mode: 6/6. These suites cover meaningful subsets of sections A, B, C, and E, not every listed case.
+- Production Playwright: 10/10 across desktop Chromium and Pixel 7 mobile against `https://the-entrew.vercel.app`. Covered static routes, no-fabricated-data behavior, 320/375/390/768/1280/1440 widths, axe on the explorer, and mocked MetaMask/Rabby switching.
+- The 40-case fixture file has policy-shape/count checks, but it is not a held-out semantic benchmark and does not measure real evaluator accuracy.
+
+### MANUALLY-PROVEN
+
+- Vercel production deployment [EndQrms6feF8MUdbE9ipUYha76ea](https://vercel.com/bibidees-projects/the-entrew/EndQrms6feF8MUdbE9ipUYha76ea) is `READY` and aliased to `https://the-entrew.vercel.app`.
+- Brave direct navigation and reload succeeded for `/`, `/program?ref=p999`, `/publish`, `/apply?program=p999`, `/evidence?entry=e999`, `/workspace`, and `/activity`; the browser console had no errors. Contract-dependent routes correctly remain unconfigured.
+
+### PENDING / NOT LIVE-PROVEN
+
+- No real Studionet deployment, address, deployment transaction, source attestation, live validator agreement, finalized lifecycle, roster readback, or fixture-marker write exists. All L01–L16 remain pending.
+- No real wallet signed a transaction. Wallet tests use injected providers and do not establish transaction finality or SDK finality behavior against a live write.
+- The complete A–E matrix is not executed. Remaining work includes broader authorization/idempotence and timing cases, prompt injection and independent-validator divergence, retry/replay/cooldown boundaries, wallet race/recovery/keyboard tests, property testing, the held-out semantic benchmark, and the full mutation set.
+
+See `../../docs/TEST_RESULTS.md` for exact commands, suite counts, runtime pins, source hash, and production evidence. Do not change a pending case to `LIVE-PROVEN` based on Direct Mode or mocked browser fixtures.
