@@ -1,0 +1,75 @@
+{
+  "product": "ENTREW",
+  "release_stage": "PRE-BUILD SPECIFICATION ONLY",
+  "implementation_included": false,
+  "network": {
+    "name": "GenLayer Studionet",
+    "chain_id": 61999,
+    "rpc": "https://studio.genlayer.com/api"
+  },
+  "toolchain": {
+    "required_local_cli": "0.39.1"
+  },
+  "files": [
+    {
+      "path": "ARCHITECTURE.md",
+      "sha256": "8c9ed4d3a255698d1854ad5b5135cf8c951bb4dceb22adf7df74be462966227a"
+    },
+    {
+      "path": "BUILD_PROMPT.txt",
+      "sha256": "5c21629e1025613c055afd39f06d213898f5a9bd2835750b105ed6f5556ae98f"
+    },
+    {
+      "path": "CONTRACT_SPEC.md",
+      "sha256": "b93381a21287174fbb8029cdb5c84d9af8bcbcacbb4272014ba943401a2183f1"
+    },
+    {
+      "path": "PRODUCT_SPEC.md",
+      "sha256": "025f2a4abb6d192c29093e25a980b2d272dfee8745cc0e2aac70f93510e51f96"
+    },
+    {
+      "path": "README.md",
+      "sha256": "3c4a700d393a39b9dcb36de8dfb0fe424ff74ed809c6279214ebd584caf0d16f"
+    },
+    {
+      "path": "docs/DEPLOYMENT.md",
+      "sha256": "51df9bf710ef5a557c6520845d2da8ea0628706c1016574dccf29ef26a33b13d"
+    },
+    {
+      "path": "docs/EVIDENCE_AND_CONSENSUS.md",
+      "sha256": "8287cd486e8598c08b77f9cf598f7eb0ec910b9f2a201e7b41c89941396e9730"
+    },
+    {
+      "path": "docs/FRONTEND_UX.md",
+      "sha256": "c9d3eb4fbc9b949ea628ac7f568ad8c4a8fadd145df9875855965f6671aac372"
+    },
+    {
+      "path": "docs/OPEN_DESIGN_QUESTIONS.md",
+      "sha256": "6ee797510e7e04eb631579d6f5cfba4bbc4f408c7a62cffec1ae349fa64d4e81"
+    },
+    {
+      "path": "docs/ORIGINALITY.md",
+      "sha256": "228df92ec30b639b91429a7e0cb33f9d760f5626cc309d9938386784bee65fc0"
+    },
+    {
+      "path": "docs/REFERENCES.md",
+      "sha256": "d7cd35141c2354a77fdb7ffa8732c1b1196c2a86d59a81fa9cbfc4fbd0009b47"
+    },
+    {
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "sha256": "55023bdf518965c97fbe72e46900b796b5265efdf73656f69948236feed13a78"
+    },
+    {
+      "path": "docs/SECURITY.md",
+      "sha256": "e2891f15d6571dbd89f1b7e292b175572235bc09b7856d56ad6f4df1ec80090d"
+    },
+    {
+      "path": "docs/STATE_MACHINE.md",
+      "sha256": "7f49e54d6513cd0b7d3d5584775fc29a38b686d5a0e09e541723d1b335d809fa"
+    },
+    {
+      "path": "docs/TEST_MATRIX.md",
+      "sha256": "6fe5b5549d2de620e4c4fac8ee84fa0331511f90bc0e93aa41f36a9a7ca8b37f"
+    }
+  ]
+}

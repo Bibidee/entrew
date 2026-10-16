@@ -1,0 +1,44 @@
+{
+  "name": "entrew",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=20.9" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "export": "next build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "node --test tests/contract-surface/contract.test.mjs",
+    "test:contract-surface": "node --test tests/contract-surface/contract.test.mjs",
+    "test:python": "python -m unittest discover -s tests/python -p test_*policy.py -v",
+    "test:mutations": "python -m unittest discover -s tests/python -p test_mutation_smoke.py -v",
+    "test:direct": "pytest tests/python/test_direct_contract.py -v",
+    "test:e2e": "playwright test",
+    "network:check": "node scripts/network-check.mjs",
+    "cli:version": "npx genlayer --version",
+    "cli:local-version": "node scripts/local-cli-version.mjs",
+    "deploy:studionet": "node scripts/deploy-studionet.mjs",
+    "audit": "npm audit --omit=dev",
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:python && npm run test:mutations && npm run test:direct && npm run build"
+  },
+  "dependencies": {
+    "genlayer-js": "1.1.8",
+    "next": "16.4.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "@types/node": "22.19.15",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.4.2",
+    "genlayer": "0.39.1",
+    "typescript": "7.0.2"
+  }
+}
+
