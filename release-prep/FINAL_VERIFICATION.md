@@ -46,13 +46,13 @@ The post-fix review found no further confirmed defect in the contract's reposito
 | Reviewed source | SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob `8348ba2282fc062e9fe32e488245d536bd138334` |
 | Canonical `get_info` | `chain_id=61999, contract=EntrewRegistry, name=ENTREW, page_limit=25, schema_version=1` |
 
-The independent verifier waited for the finalized receipt, checked the RPC chain ID, read finalized contract bytes through Studio's address-only `gen_getContractCode` call, matched those bytes to the reviewed source, and read canonical `get_info` at `LATEST_FINAL`. This is direct deployed-byte and canonical-state evidence; it is not a separate source-attestation service. No lifecycle transaction was broadcast after deployment.
+The independent verifier waited for the finalized receipt, checked the RPC chain ID, read finalized contract bytes through Studio's address-only `gen_getContractCode` call, matched those bytes to the reviewed source, and read canonical `get_info` at `LATEST_FINAL`. This is direct deployed-byte and canonical-state evidence; it is not a separate source-attestation service. The subsequent lifecycle transactions were broadcast only from the separately authorized unlocked test wallets and are recorded in the live evidence capture.
 
-`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment script was run once after the final preflight and produced the verified test deployment recorded below. GitHub Actions [run 38950006010](https://github.com/Bibidee/entrew/actions/runs/38950006010) passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`, including the release-prep, Python, Direct Mode, desktop Playwright, build and audit stages.
+`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment script was run once after the final preflight and produced the verified test deployment recorded below. The prior green GitHub Actions run is [38950698815](https://github.com/Bibidee/entrew/actions/runs/38950698815); the complete local rerun after the verifier fix is recorded above and will be rechecked by CI on this commit.
 
 ## Local verification
 
-- `npm run check`: passed typecheck, lint, contract surface 5/5, release-prep 7/7, policy 17/17, mutation 4/4, Direct Mode 28/28, and production build. Direct Mode includes the raw-fallback, exact-tree, malformed-identity and line-wrap regressions.
+- `npm run check`: passed typecheck, lint, contract surface 5/5, release-prep 8/8 (including the corrected-roster regression), policy 17/17, mutation 4/4, Direct Mode 28/28, and production build. Direct Mode includes the raw-fallback, exact-tree, malformed-identity and line-wrap regressions.
 - Browser verification against the exported production build passed 10/10 Playwright checks across desktop and mobile Chromium, six viewport widths, routes, axe checks and wallet-modal simulation. The default dev-server run was tooling-limited at 8/10 by two mobile connection refusals; the stable exported-build run is the recorded result.
 - `npm run audit`: 0 production dependency vulnerabilities.
 - `npm run network:check`: passed contamination scan and live RPC chain check.
@@ -80,48 +80,58 @@ The scorer rejects partial inputs, mismatched corpus digests, response-byte dige
 
 ## Fixture readiness
 
-Draft scenarios are prepared locally for positive, negative, corrected revision (`r1` and `r2`), unavailable evidence and unauthorized action in `Bibidee/entrew-fixtures` (public repository, default branch `main`). No fixture files have been written to GitHub.
+Authorized live fixtures are published on the separate branch [`entrew-live-2026-10-16`](https://github.com/Bibidee/entrew-fixtures/tree/entrew-live-2026-10-16) in `Bibidee/entrew-fixtures`; `main` and the two historical fixture commits were preserved. Each lifecycle revision was independently fetched from GitHub by its full commit SHA before submission.
 
 | Required field | Ready |
 |---|---:|
 | Exact repository and fresh unique nonce | 6/6 marker revisions |
-| Full immutable commit SHA | 0/6 |
-| Program ID | 0/6 |
-| Applicant wallet | 0/6 |
-| Marker bound to repo, nonce, program and wallet | 0/6 |
-| Distinct full commits for corrected `r1`/`r2` | Not verifiable |
-| Separate unauthorized wallet and target entry | Not ready |
-| Fixture write authorization for this run | Not provided |
+| Full immutable commit SHA | 6/6 |
+| Program ID (`p1`) | 6/6 |
+| Applicant wallet | 6/6 |
+| Marker bound to repo, nonce, program and wallet | 6/6 |
+| Distinct full commits for corrected `r1`/`r2` | Verified |
+| Separate unauthorized wallet and target entry | Verified (`live-dave` → `e2`) |
+| Fixture write authorization for this run | Authorized and branch-published |
 
-These are drafts, not executable or publish-ready fixtures. Fill the immutable commit SHA only after an authorized write; independently verify the resulting full SHA and marker content before submitting any transaction.
+The exact marker and source fingerprints are recorded in [`live-evidence.2026-10-16.json`](./live-evidence.2026-10-16.json). The unavailable fixture intentionally omits `tests/test_payment_replay.py`; GitHub returned the expected 404 at its pinned commit.
 
 ## Deployment, live verifier and isolated frontend
 
-The read-only live verifier first proves its fixed RPC reports chain `61999`, then attests finalized deployed source bytes against the consolidated candidate SHA-256, checks finalized execution, reads canonical finalized state, and asserts repository/commit/wallet/program/nonce/marker/every-file/outcome/criteria/roster bindings. It requires positive, negative, corrected-r1, corrected-r2, unavailable-evidence and unauthorized-action assertions; an empty matrix cannot pass. It has now run against the new deployment for chain, source-byte, finality, execution and canonical-state verification. The required lifecycle matrix is still empty, so it correctly does not claim lifecycle evidence.
+The read-only live verifier first proves its fixed RPC reports chain `61999`, then attests finalized deployed source bytes against the consolidated candidate SHA-256, checks finalized execution, reads canonical finalized state, and asserts repository/commit/wallet/program/nonce/marker/every-file/outcome/criteria/roster bindings. It was run against the existing deployment with the complete live transaction matrix. Submission, assessment, revision, replay and unauthorized-control transactions all reached finality; canonical reads show entries `e1`, `e2`, and `e3` in `INCONCLUSIVE` state and a qualified roster count of zero.
 
-The frontend smoke harness uses process-only local environment values, refuses the historical production contract address, and checks that each public read targets only the supplied test address with `latest-final`. It has syntax validation only because no new test contract address or live records exist. No `.env`, Vercel production setting, alias or existing production contract was changed.
+Every evaluator attempt (`a1`–`a6`) returned `PROVIDER_UNAVAILABLE / REPOSITORY_UNAVAILABLE` with both criteria `UNVERIFIABLE` and no marker or file fingerprints. The strict verifier therefore failed closed at `positive marker hash mismatch`; it did not convert unavailable external evidence into `QUALIFIED` or `NOT_ESTABLISHED`. The 600-second retry for the current corrected-r2 revision was completed as `a6` and reproduced the same provider failure.
+
+The complete transaction and canonical-read capture is [`live-evidence.2026-10-16.json`](./live-evidence.2026-10-16.json). The filled strict run input is [`live-run.2026-10-16.json`](./live-run.2026-10-16.json), and the final diagnostic is [`strict-verifier.2026-10-16.log`](./strict-verifier.2026-10-16.log). No Vercel setting, production contract address or merge was changed.
+
+| Live action | Finalized transaction |
+|---|---|
+| Program publish (`p1`) | `0x605522877ff620d0e978f0d891c0f191c05a94b5f36b84dd5445a6fa06211f06` |
+| Positive submit / assess (`e1:r1`) | `0x6d56f61b0bb786021c338d3042062481e92e7942b31804a0111b18f3d004c6ee` / `0xbeb9c165d138ca5e796871693be9cca1ce8922e51862d047a6b07fc61dc08366` |
+| Negative submit / assess (`e2:r1`) | `0xd2943045031e917dbb42ae3db9db22184f580d018caf01ab94b7c701049f55d0` / `0x343af64bcdcfa358406726e5513d82ffd365dec3e486af0fe768c35b5a52600f` |
+| Corrected r1 submit / assess (`e1:r2`) | `0xcf96e471ad798873fd0a53387c23fad9b0989ab825ba11c9c519b26d9f9aee51` / `0x9b780da09a9fa37ed6e270eb51650ac00d7e1973421215e08df6863321f1c961` |
+| Corrected r2 submit / assess / cooldown retry (`e1:r3`) | `0xf42c585e2f885ecfb223070bbc70210ba153734dfbc63647dda2cfa83cb144e7` / `0xcd1854096bf1406f3666703710f3e3e425ba01d2bee28c4a0c944bf37819966f` / `0x159a8f8c671a56ef0ba1967b8cfd5a94e2e04661d0a20be3581cd6d9d7f41ed8` |
+| Unavailable submit / assess (`e3:r1`) | `0xa2e81f8128e65b38aa9915bba1b3b0f5f217694477aa52f1983defb4458428d6` / `0xe6c7606d76a9052238cd5aadc36a091cb9a95c8af5b21eb0bc1a807fa9111638` |
+| Replay control / unauthorized control | `0x14df1250544ae8d3ed74426241105070a4533bdc9ad1a7aec8b0637783203ac6` / `0x96bbdb5fc9c06f9771cd16bbb0396f51b03a63fdcebbae049045c84c8434c428` |
+
+The frontend smoke harness uses process-only local environment values, refuses the historical production contract address, and checks that each public read targets only the supplied test address with `latest-final`. It was not run against the live contract because the evaluator provider left every record inconclusive; no `.env`, Vercel production setting, alias or existing production contract was changed.
 
 Historical Vercel metadata identifies the production deployment as a dirty CLI source tree, not an immutable clean commit. The candidate adds `.vercelignore` to exclude generated/test artifacts and must be deployed from a clean checkout when that later action is authorized.
 
 ### Wallet and external approvals required
 
-- Six distinct wallet roles are planned: deployer, organizer, positive/corrected applicant, negative applicant, unavailable-evidence applicant and unauthorized control. The corrected `r1`/`r2` writes use the same positive applicant wallet.
-- The deployer authorization was used once for the deployment above. The organizer must still sign program publication.
-- Each applicant must sign their entry/revision submission and every assessment write. The corrected revision requires a fresh revision submission and assessment signature.
-- The unauthorized control must sign (or explicitly reject) the forbidden cross-applicant mutation attempt; a reverted attempt is still a real signed transaction if broadcast.
-- Real browser wallet connection, network switching and signing prompts require user interaction in the wallet.
-- Fixture repository writes require separate explicit GitHub write authorization.
-- Vercel production environment changes/redeploy and PR merge each require separate explicit authorization.
+- Completed wallet interactions are recorded for the deployer, organizer, `live-alice` (positive/corrected), `live-bob` (negative), `live-carol` (unavailable evidence), and `live-dave` (unauthorized control). The corrected `r1`/`r2` writes used the same applicant wallet and distinct commits/nonces.
+- The organizer publication, all three entry submissions, both corrected revisions, all five first assessments, the cooldown-authorized `a6` retry, the replay control and the unauthorized control were signed with unlocked test accounts and reached finalized receipts. Their hashes and canonical states are in the live evidence record.
+- No further wallet interaction is needed for read-only source attestation, finality polling, canonical reads, strict verification, local tests or isolated frontend tests. A future retry after the frozen retry budget would require the applicant wallet again and must not be automated without a new authorization.
+- Real browser wallet connection, network switching and signing prompts still require user interaction in the wallet if production or a new isolated frontend session is exercised.
+- Fixture repository writes were explicitly authorized for this run and are confined to the dedicated branch. Vercel production environment changes/redeploy and PR merge remain separately gated and were not performed.
 
-Once those approvals and identities are supplied, finality polling, canonical reads, source hash checks, case assertions, roster checks, retry boundaries and local isolated Playwright testing are automatable. Wallet prompts and user authorization are not.
+Finality polling, canonical reads, source hash checks, case assertions, roster checks, retry boundaries and local isolated Playwright testing are automatable. Wallet prompts, fixture writes outside the dedicated branch, Vercel changes and merge authorization are not.
 
 ## Exact remaining blockers
 
-1. The reviewed source is deployed and verified at `0x882D765Bc9c1a6A83091858620bC60212135d25b` with transaction `0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`; CI run 38950006010 passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
-2. No independently adjudicated and actually evaluated held-out semantic results; all benchmark error rates and accuracy remain unknown (0/40 evaluated).
-3. Fixture wallet addresses, temporary program ID, six immutable commits and fixture-write authorization are missing.
-4. No positive, negative, corrected-revision, unavailable-evidence or unauthorized-action lifecycle evidence exists for this new contract.
-5. No live test-contract frontend smoke or real-wallet browser QA exists.
-6. No production address/configuration was changed; production Vercel QA against the new contract remains pending explicit authorization.
+1. **External evidence provider unavailable:** all six evaluator attempts returned `REPOSITORY_UNAVAILABLE`, leaving every lifecycle `INCONCLUSIVE`, the qualified roster empty and the strict verifier failed closed. This is the direct blocker to positive/negative/corrected semantic evidence.
+2. **Held-out semantic benchmark:** 0/40 cases were evaluated by an independent live evaluator. False qualification, false rejection, inconclusive rate and accuracy remain unmeasured; validator disagreement is unavailable.
+3. **Frontend live binding:** Playwright passed against the local unconfigured app, but no isolated frontend session was bound to this test contract and no production browser QA was authorized.
+4. **Production release actions:** Vercel environment changes, production redeploy, PR merge and any new transaction after this run remain explicitly unauthorized.
 
-One authorized deployment transaction occurred and was independently verified above. No lifecycle transaction, fixture write, production configuration change or merge occurred. Preserve the historical production contract and evidence as-is.
+The existing production contract and historical evidence remain unchanged. The reviewed test contract, fixture branch, all finalized live hashes, canonical reads, retry outcome and strict-verifier failure are preserved for provider recovery and a separately authorized continuation.

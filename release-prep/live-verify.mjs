@@ -128,7 +128,10 @@ function validateRunMatrix(config) {
   if (!Array.isArray(config.expected_qualified_entry_ids)) throw new Error("expected_qualified_entry_ids must be an array.");
   const expectedQualified = config.expected_qualified_entry_ids.map((entryId, index) => requireValue(entryId, "expected_qualified_entry_ids[" + index + "]"));
   if (new Set(expectedQualified).size !== expectedQualified.length) throw new Error("expected_qualified_entry_ids contains duplicates.");
-  const requiredQualified = [requireValue(positive.entry_id, "positive.entry_id"), requireValue(correctedR2.entry_id, "corrected-r2.entry_id")].sort();
+  const requiredQualified = [...new Set([
+    requireValue(positive.entry_id, "positive.entry_id"),
+    requireValue(correctedR2.entry_id, "corrected-r2.entry_id"),
+  ])].sort();
   if (stable([...expectedQualified].sort()) !== stable(requiredQualified)) throw new Error("The qualified roster must contain exactly the positive and corrected-r2 entries.");
   return cases;
 }

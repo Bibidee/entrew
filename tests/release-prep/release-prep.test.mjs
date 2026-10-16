@@ -38,6 +38,12 @@ test("the live verifier fails closed on network identity and incomplete lifecycl
   assert.doesNotMatch(verifier, /for \(const testCase of config\.cases \|\| \[\]\)/);
 });
 
+test("the qualified roster deduplicates a corrected revision that shares its entry", () => {
+  assert.match(verifier, /const requiredQualified = \[\.\.\.new Set\(\[/);
+  assert.match(verifier, /requireValue\(positive\.entry_id, "positive\.entry_id"\)/);
+  assert.match(verifier, /requireValue\(correctedR2\.entry_id, "corrected-r2\.entry_id"\)/);
+});
+
 test("an incomplete matrix is rejected before any live RPC request", () => {
   const dir = mkdtempSync(join(tmpdir(), "entrew-live-verify-"));
   const configPath = join(dir, "incomplete.json");
