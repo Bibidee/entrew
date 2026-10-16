@@ -1,6 +1,6 @@
 # ENTREW — verified-test requirement matrix
 
-This document is the V1 requirement matrix. It includes pending requirements and partial coverage; execution evidence is summarized at the end and detailed in `../../docs/TEST_RESULTS.md`. A test passing a subset does not mark an entire row or lifecycle complete.
+This is the V1 requirement matrix. A test passing a subset does not mark an entire row or lifecycle complete. Execution evidence is summarized at the end and detailed in `../../docs/TEST_RESULTS.md`.
 
 ## A. Contract/Direct Mode
 
@@ -14,7 +14,7 @@ C01 every criterion MET -> QUALIFIED; C02 required NOT_MET -> NOT_ESTABLISHED; C
 
 D01 public Explorer no wallet; D02 program true count/offset pages; D03 filter disclosure of current-page vs global; D04 publish frozen preview; D05 sign rejection; D06 MetaMask; D07 Rabby with multiple providers; D08 app disconnect truthfulness; D09 switch/add 61999; D10 account changes invalidate stale data; D11 provisional ACCEPTED not FINALIZED; D12 FINALIZED-but-failed not success; D13 finalized-but-unverified not success; D14 canonical digest readback; D15 duplicate click; D16 reconciliation on reload/hash; D17 monitor timeout no rebroadcast; D18 historical address activity isolation; D19 concurrent page append/count race; D20 out-of-order RPC responses; D21 mobile evidence studio; D22 keyboard-only composition; D23 axe and contrast; D24 narrow viewport no overflow; D25 no mocked data in production; D26 disabled action state and aria-live errors; D27 no stale data across wallet/provider change; D28 deep-link reload on production host.
 
-## C. Live Studionet 61999 (after deployment)
+## C. Live Studionet 61999
 
 L01 deploy exact built source, record SHA/tx/address/finality; L02 canonical read contract and network; L03 organizer wallet publishes program; L04 applicant distinct wallet files legitimate revision; L05 same applicant triggers semantic assessment -> QUALIFIED with every MET; L06 qualified roster contains exact entry after finalized readback; L07 a provably missing criterion -> NOT_ESTABLISHED without roster entry; L08 corrected new SHA -> QUALIFIED before deadline; L09 unavailable evidence -> INCONCLUSIVE (controlled valid fixture if possible, not induced false network failure); L10 inconclusive retry boundary and cooldown; L11 unauthorized wallet cannot mutate another entry; L12 replay blocked; L13 wrong-network UX actual wallet; L14 refreshing production app restores records; L15 actual desktop/mobile browser QA; L16 no second network/deprecated deployment in production bundle.
 
@@ -28,26 +28,41 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 
 ## Evidence quality categories
 
-`AUTOMATED-PASSED`, `LIVE-PROVEN`, `MANUALLY-PROVEN`, `TOOLING-LIMITED`, `PENDING`, `FAILED`. Every claimed outcome must link to precise test run, transaction or browser log. CI can validate sources but cannot substitute for actual live validator judgments.
+`AUTOMATED-PASSED`, `LIVE-PROVEN`, `MANUALLY-PROVEN`, `TOOLING-LIMITED`, `PENDING`, `FAILED`. Every claimed outcome links to a precise test run, transaction or browser observation. CI cannot substitute for live validator judgments.
 
 ## Current execution status — 2026-10-16
 
 ### AUTOMATED-PASSED
 
-- `npm run check` passed locally on commit `090968f`; GitHub Actions [run 38886003320](https://github.com/Bibidee/entrew/actions/runs/38886003320) passed on Linux.
-- Node contract-surface: 5/5. Python policy/fixture-policy: 12/12. Mutation smoke: 4/4. GenVM Direct Mode: 6/6. These suites cover meaningful subsets of sections A, B, C, and E, not every listed case.
-- Production Playwright: 10/10 across desktop Chromium and Pixel 7 mobile against `https://the-entrew.vercel.app`. Covered static routes, no-fabricated-data behavior, 320/375/390/768/1280/1440 widths, axe on the explorer, and mocked MetaMask/Rabby switching.
-- The 40-case fixture file has policy-shape/count checks, but it is not a held-out semantic benchmark and does not measure real evaluator accuracy.
+- GitHub Actions [run 38894822355](https://github.com/Bibidee/entrew/actions/runs/38894822355) passed the PR #4 workflow: CLI/network checks, type/lint, Node and Python suites, Direct Mode, Playwright, build and dependency audit.
+- Python policy/fixture policy: 13 passed. GenVM Direct Mode: 7 passed. These suites cover subsets of sections A, B, C and E, not every listed case.
+- Focused evidence query-route E2E and axe: 1 passed. The final production evidence route axe audit reported zero violations.
+- The 40-case fixture corpus is not a held-out semantic benchmark and does not measure live evaluator accuracy.
+
+### LIVE-PROVEN
+
+- L01–L02: deployment `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`, tx `0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127`; finalized majority agreement, canonical `get_info`, chain ID `61999`, and `getContractCode` SHA-256 match to tracked source.
+- L03: program `p1` publish tx `0xd6e7d5400d57a7e6babefc08d87d1ef47a3ae2357d73c0e2ac159714c5d18e22`, finalized.
+- L04–L06: positive submit `0xb40732b8881c45aceebf238b048f7a0c05ec467d809de20c10e08050812fda2a` and assessment `0x1e660ab0ff7a885f42ce0677a70e6d776debd63f9354bd260fe3c8a8708ba79e`; finalized `QUALIFIED`, `[MET, MET]`, revision-bound provenance, entry `e1` in canonical roster.
+- L07: negative submit `0x7169872045f7d094d03cdc7d03e80b5f03870daf266b45a06f58627c9572c7f2` and assessment `0x44feb87f02a28d923894c7b6bf1da4cd0afa4b0890a8974f3a1e123c8f77eca8`; SDK finality and canonical reads confirmed `NOT_ESTABLISHED`, `[NOT_MET, MET]`, revision-bound provenance, entry `e2` absent from roster.
+- Two public GitHub fixture markers were written to [Bibidee/entrew-fixtures](https://github.com/Bibidee/entrew-fixtures), a repo separate from the product repo. The user authorized these test writes.
 
 ### MANUALLY-PROVEN
 
-- Vercel production deployment [EndQrms6feF8MUdbE9ipUYha76ea](https://vercel.com/bibidees-projects/the-entrew/EndQrms6feF8MUdbE9ipUYha76ea) is `READY` and aliased to `https://the-entrew.vercel.app`.
-- Brave direct navigation and reload succeeded for `/`, `/program?ref=p999`, `/publish`, `/apply?program=p999`, `/evidence?entry=e999`, `/workspace`, and `/activity`; the browser console had no errors. Contract-dependent routes correctly remain unconfigured.
+- Latest Vercel production deployment [dpl_8Y5SPk1HZ5KHPreZzSXLUDGVrS4A](https://vercel.com/bibidees-projects/the-entrew/8Y5SPk1HZ5KHPreZzSXLUDGVrS4A) is `READY` and aliased to [https://the-entrew.vercel.app](https://the-entrew.vercel.app); production contract address and Studionet settings are configured.
+- Brave displayed the live evidence record with e1/e2 canonical outcomes. Evidence detail navigation/reload succeeded; no console errors were observed.
 
-### PENDING / NOT LIVE-PROVEN
+### TOOLING-LIMITED / PARTIAL
 
-- No real Studionet deployment, address, deployment transaction, source attestation, live validator agreement, finalized lifecycle, roster readback, or fixture-marker write exists. All L01–L16 remain pending.
-- No real wallet signed a transaction. Wallet tests use injected providers and do not establish transaction finality or SDK finality behavior against a live write.
-- The complete A–E matrix is not executed. Remaining work includes broader authorization/idempotence and timing cases, prompt injection and independent-validator divergence, retry/replay/cooldown boundaries, wallet race/recovery/keyboard tests, property testing, the held-out semantic benchmark, and the full mutation set.
+- L14: production refresh and query-ID evidence route were manually checked; the complete multi-route recovery matrix is not.
+- L15, D24, D28: no-overflow assertions passed at 320/375/390/768/1280/1440 px. A later repeated route read intermittently failed on RPC `Failed to fetch`. Headless production responsive sweep is therefore partially proven, not a clean end-to-end pass; full manual mobile/keyboard review remains open.
+- L16: active-source contamination check found no `61997`; the final post-accessibility deployment's complete JS bundle has not been independently scanned for stale addresses.
+- Deployment and negative-assessment validator receipts reported cancellation/error after consensus quorum was reached. SDK finality and canonical reads confirmed the expected state; record this receipt detail when interpreting them.
 
-See `../../docs/TEST_RESULTS.md` for exact commands, suite counts, runtime pins, source hash, and production evidence. Do not change a pending case to `LIVE-PROVEN` based on Direct Mode or mocked browser fixtures.
+### PENDING
+
+- L08–L13: corrected revision, controlled unavailable-evidence result and cooldown, live authorization/replay checks, and actual wrong-network wallet behavior.
+- Broader D cases: full MetaMask/Rabby wallet UI, keyboard-only flows, provider/account races, retry/recovery boundaries, and duplicate-click behavior.
+- Full adversarial prompt, live validator-divergence, held-out semantic benchmark, broad mutation/property suites, and complete A–E coverage.
+
+See `../../docs/TEST_RESULTS.md` and `../../docs/DEPLOYMENT.md` for full hashes, canonical results and receipt details. Never change a pending case to `LIVE-PROVEN` based on Direct Mode or mocked browser fixtures.
