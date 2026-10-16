@@ -31,7 +31,7 @@ The post-fix review found no further confirmed defect in the contract's reposito
 | Live RPC response | `0xf22f` (`61999`) |
 | Repository-local GenLayer CLI | `0.39.1` |
 
-`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment command and options were inspected, but the deployment script was not run. The earlier PR CI evidence applies only to its named commit; this final audit update must be pushed and checked by GitHub Actions before it is used as CI evidence.
+`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment command and options were inspected, but the deployment script was not run. GitHub Actions [run 38946356472](https://github.com/Bibidee/entrew/actions/runs/38946356472) passed on commit `d40887bcf96dd2e5170d1add5def8c710ad44b16`, including the release-prep, Python, Direct Mode, desktop Playwright, build and audit stages.
 
 ## Local verification
 
@@ -100,7 +100,7 @@ Once those approvals and identities are supplied, finality polling, canonical re
 
 ## Exact remaining blockers
 
-1. The consolidated candidate is committed locally and must be pushed to PR #6, then checked by GitHub Actions on that new head.
+1. The consolidated candidate is committed and pushed to PR #6, and GitHub Actions run 38946356472 passed on the current head.
 2. No independently adjudicated and actually evaluated held-out semantic results; all benchmark error rates and accuracy remain unknown.
 3. Fixture wallet addresses, temporary program ID, six immutable commits and fixture-write authorization are missing.
 4. No new Studionet deployment, source attestation or positive/negative/correction/unavailable/unauthorized live lifecycle evidence exists.
