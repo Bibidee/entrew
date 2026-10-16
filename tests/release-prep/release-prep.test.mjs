@@ -33,6 +33,7 @@ test("the live verifier fails closed on network identity and incomplete lifecycl
   assert.match(verifier, /fullTransaction: true/);
   assert.match(verifier, /bindCallTransaction/);
   assert.match(verifier, /bindDeploymentTransaction/);
+  assert.match(verifier, /gen_getContractCode", \[address\]/);
   assert.match(verifier, /Unauthorized action must be finalized after the target assessment/);
   assert.doesNotMatch(verifier, /for \(const testCase of config\.cases \|\| \[\]\)/);
 });

@@ -255,7 +255,9 @@ const rpcChainHex = await rpc("eth_chainId", []);
 if (typeof rpcChainHex !== "string" || !/^0x[0-9a-fA-F]+$/.test(rpcChainHex)) throw new Error("eth_chainId returned an invalid RPC response.");
 const rpcChainId = Number.parseInt(rpcChainHex, 16);
 if (!Number.isSafeInteger(rpcChainId) || rpcChainId !== CHAIN_ID) throw new Error("RPC chain ID is " + rpcChainHex + "; expected Studionet 61999.");
-const deployedBase64 = await rpc("gen_getContractCode", [{ address, status: "finalized" }]);
+// Studio's installed SDK uses the address-only finalized code RPC. Finality is
+// established on the deployment transaction before this read is accepted.
+const deployedBase64 = await rpc("gen_getContractCode", [address]);
 const deployedBytes = decodeBase64Strict(deployedBase64, "finalized contract source");
 if (!deployedBytes.equals(localBytes)) throw new Error("Deployed source bytes differ from the exact reviewed local bytes.");
 const deployedHash = createHash("sha256").update(deployedBytes).digest("hex");
