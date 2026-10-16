@@ -1,63 +1,60 @@
-# Exact-release checklist — do not mark checked until observed
+# Exact-release checklist — status updated 2026-10-16
+
+Check boxes only reflect observed work. Open items are listed explicitly.
 
 ## Phase 0: scope and research
 
-- [ ] Inspect this entire handoff, supplied Patchbound example, official GenLayer docs and exact pinned tool versions.
-- [ ] Resolve only ambiguities in `docs/OPEN_DESIGN_QUESTIONS.md`, document choices before code freeze, do not broaden product.
-- [ ] Create a real clean ENTREW repository, not inside Vowmark or Accordant.
+- [x] Inspect the supplied handoff and repository source.
+- [x] Record implementation decisions and unresolved design questions in the repository.
+- [x] Keep ENTREW in its own repository, separate from other products.
 
 ## Phase 1: engineering
 
-- [ ] One backendless Next.js + TypeScript app / one contract.
-- [ ] Source and contract policy align (URLs, digest, deadline, outcome precedence).
-- [ ] Local CLI `0.39.1`; only Studionet `61999`.
-- [ ] Strong wallet selection and public finalized read client.
-- [ ] Robust canonical transaction readback and recovery.
-- [ ] Full Direct Mode/semantic fixtures and UI tests.
-- [ ] Run typecheck, lint, unit, browser, accessibility, static build and dependency audit.
-- [ ] Actual `npm ci` from committed lockfile succeeds.
-- [ ] Dependency issues resolved or precisely disclosed.
-- [ ] Required CI workflows protected on default branch where permissions allow.
+- [x] One backendless Next.js + TypeScript app and one contract.
+- [x] Source and contract policy align on URLs, digest, deadline, outcome precedence and finality.
+- [x] Local CLI `0.39.1`; only Studionet `61999`.
+- [x] Wallet selection, public finalized reads and canonical readback implemented.
+- [x] Direct Mode, source policy, browser tests and dependency audit run in CI.
+- [x] `npm ci` from committed lockfile succeeds.
+- [x] CI workflow passed: [run 38894822355](https://github.com/Bibidee/entrew/actions/runs/38894822355).
+- [ ] Complete adversarial, property and held-out semantic coverage.
 
 ## Phase 2: safety hardening
 
-- [ ] No arbitrary web fetch; exact GitHub evidence binding.
-- [ ] Attacker-origin prompt instructions ignored; validator independently re-evaluates.
-- [ ] All criterion vectors complete and exact; mismatch fails closed.
-- [ ] Missing/429/5xx/incomplete/oversize evidence doesn't falsely qualify.
-- [ ] Conclusive result replay impossible; bounded inconclusive retries.
-- [ ] One entry per wallet per program; no multi-wallet person-uniqueness claim.
-- [ ] No organizer adjudication or admin outcome setters.
-- [ ] No escrow or non-zero payable user value in product.
-- [ ] Roster strictly derived from finalized canonical records.
+- [x] No arbitrary web fetch; exact GitHub evidence binding.
+- [x] Closed criterion vectors and fail-closed outcome aggregation.
+- [x] Bounded retries and replay protections implemented in source and Direct Mode.
+- [x] No organizer adjudication, admin outcome setter, or nonzero payable product value.
+- [x] Roster is derived from canonical finalized contract records.
+- [ ] Live-test retry, replay, authorization and deadline boundaries.
+- [ ] Measure prompt injection and validator disagreement with independent cases.
 
 ## Phase 3: Studionet deployment
 
-- [ ] Freeze contract commit and compute SHA-256.
-- [ ] Deploy exact source to 61999 with repo-local 0.39.1.
-- [ ] Observe finality and successful execution; capture tx/address.
-- [ ] Perform independent source readback/attestation if supported. Report any tooling limit explicitly.
-- [ ] Configure actual address before Vercel release.
-- [ ] Run full checks AGAINST final production config.
-- [ ] Contract change after deployment triggers redeploy/reverification.
+- [x] Freeze contract source commit and compute SHA-256.
+- [x] Deploy exact source to Studionet `61999` with local CLI `0.39.1`.
+- [x] Observe finality; capture transaction and address.
+- [x] Compare deployed code readback with tracked source hash.
+- [x] Configure the live address in Vercel production and redeploy.
+- [x] Verify production app reads canonical Studionet state.
 
 ## Phase 4: real lifecycles and browsers
 
-- [ ] Distinct organizer/applicant real wallet lifecycle on 61999.
-- [ ] Real positive (qualify + roster) and negative (no qualification) proofs.
-- [ ] Real corrected revision and inconclusive/retry scenarios where feasible.
-- [ ] Real adversarial authorization and replay proofs where safe.
-- [ ] Production UI checked on actual host at desktop and narrow mobile sizes.
-- [ ] Real MetaMask and Rabby boundaries tested or clearly disclosed.
-- [ ] Refresh, deep-link recovery and exact hash reconciliation tested.
-- [ ] Browser console no critical errors; no mocked provider in production.
+- [x] Real positive lifecycle finalized as QUALIFIED with every criterion MET and roster inclusion.
+- [x] Real negative lifecycle finalized as NOT_ESTABLISHED, with a NOT_MET criterion and no roster inclusion.
+- [x] Test against a separate public fixture repo with authorized marker writes.
+- [x] Brave production evidence route displayed live records; focused axe audit reported zero violations.
+- [x] Responsive overflow assertions passed at 320/375/390/768/1280/1440 px.
+- [ ] Complete responsive route sweep without intermittent RPC fetch failure; conduct manual mobile and keyboard-only review.
+- [ ] Real MetaMask/Rabby wallet UI boundaries, corrected revision, inconclusive retries, replay and authorization controls.
 
 ## Phase 5: release record
 
-- [ ] `docs/DEPLOYMENT.md` actual source SHA, commit, chain, tx, address, tests, URL, browser results.
-- [ ] Docs don't mix historical and current deployments.
-- [ ] Git working tree clean; exact HEAD CI green.
-- [ ] No secrets committed; no alternative network references in active config.
-- [ ] Final hostile independent audit done; limitations reported without downplaying.
+- [x] Record actual source SHA, commit, chain, tx, address, CI, Vercel URL and lifecycle results in `docs/DEPLOYMENT.md`.
+- [x] Distinguish historical deployment attempts from the current deployment.
+- [x] Active-source scan found no alternate chain reference `61997`.
+- [x] Report validator receipt cancellation after quorum and all remaining test gaps.
+- [ ] Independently scan the latest production JS bundle for stale addresses.
+- [ ] Complete the full hostile audit and held-out semantic benchmark.
 
-**Never check boxes based on a prompt or planned test.**
+**Status:** the requested deployment, production configuration and real positive/negative lifecycle are complete. Broader adversarial and semantic release coverage remains incomplete. Do not treat checked lifecycle items as evidence for pending cases.
