@@ -27,9 +27,9 @@ The designated public fixture repository is [Bibidee/entrew-fixtures](https://gi
 | Action | Transaction | Finalized canonical result |
 |---|---|---|
 | Publish test program `p1` | `0xd6e7d5400d57a7e6babefc08d87d1ef47a3ae2357d73c0e2ac159714c5d18e22` | `FINALIZED`, `MAJORITY_AGREE`; leader and validator success. Canonical terms digest `7c513eeae1a84ce02621e07fa55272c5b6cc0dd09a9c2da606e8c4a7309b6b82`. |
-| Positive applicant submit `e1:r1` | `0xb40732b8881c45aceebf238b048f7a0c05ec467d809de20c10e08050812fda2a` | `FINALIZED`, `MAJORITY_AGREE); canonical entry `e1`. |
+| Positive applicant submit `e1:r1` | `0xb40732b8881c45aceebf238b048f7a0c05ec467d809de20c10e08050812fda2a` | `FINALIZED`, `MAJORITY_AGREE`; canonical entry `e1`. |
 | Positive assessment | `0x1e660ab0ff7a885f42ce0677a70e6d776debd63f9354bd260fe3c8a8708ba79e` | `FINALIZED`, `MAJORITY_AGREE`; `QUALIFIED`, both criteria `MET`, provenance `REVISION_BOUND`, issue `NONE`; `e1` appears in the qualified roster. |
-| Negative applicant submit `e2:r1` | `0x7169872045f7d094d03cdc7d03e80b5f03870daf266b45a06f58627c9572c7f2` | `FINALIZED`, `MAJORITY_AGREE); canonical entry `e2`. |
+| Negative applicant submit `e2:r1` | `0x7169872045f7d094d03cdc7d03e80b5f03870daf266b45a06f58627c9572c7f2` | `FINALIZED`, `MAJORITY_AGREE`; canonical entry `e2`. |
 | Negative assessment | `0x44feb87f02a28d923894c7b6bf1da4cd0afa4b0890a8974f3a1e123c8f77eca8` | SDK finality wait and canonical reads confirmed `FINALIZED`, `MAJORITY_AGREE`; `NOT_ESTABLISHED`, criterion vector `[NOT_MET, MET]`, provenance `REVISION_BOUND`, issue `NONE`; `e2` is absent from the qualified roster. Validator cancellation was reported after quorum. |
 
 The later RPC lookup for the negative assessment hash briefly returned “not found”; the finalized SDK result and canonical contract readback remained available and showed the expected state. Do not interpret a transient lookup failure as a state rollback.
