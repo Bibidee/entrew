@@ -172,3 +172,35 @@ def test_provider_outage_is_product_inconclusive(direct_vm, direct_deploy, direc
     assert result["outcome"] == "INCONCLUSIVE"
     assert result["provenance"] == "INSUFFICIENT"
     assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
+
+
+def test_raw_github_fallback_recovers_when_api_is_unavailable(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "9" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 403, "body": "rate limited"})
+    marker = {
+        "program_id": program_id,
+        "wallet": wallet_address(direct_bob),
+        "repository": "example/registry",
+        "challenge_nonce": "a" * 32,
+    }
+    raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
+    direct_vm.mock_web(raw + r"\.entrew/claim\.json$", {"status": 200, "body": json.dumps(marker, separators=(",", ":"))})
+    direct_vm.mock_web(raw + r"src/runtime\.py$", {"status": 200, "body": "def health():\n    return 'ok'\n"})
+    direct_vm.mock_web(raw + r"docs/usage\.md$", {"status": 200, "body": "# Runtime health\nCall /health; a valid request returns ok.\n"})
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "MET", "evidence_paths": ["src/runtime.py"], "explanation": "The function returns the documented status."},
+        {"index": 1, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The guide states the request and response."},
+    ]}))
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code", "files", "criteria")}
+    assert result["provenance"] == "REVISION_BOUND"
+    assert len(result["marker_sha256"]) == 64
+    assert all(item["classification"] == "REVISION_BOUND" for item in result["files"])
+    assert len(json.loads(contract.get_program_qualified_page(program_id, 0, 25))) == 1
