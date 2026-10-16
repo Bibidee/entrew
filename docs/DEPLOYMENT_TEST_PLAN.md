@@ -30,7 +30,7 @@ Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.c
 
 | Step | Execution | Evidence to save | State |
 |---|---|---|---|
-| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`; Git blob ID `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`; final PR commit is recorded after push |
+| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`; Git blob ID `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`; contract fix commit `274d6935c9e8f14c2e955d5e6fa4d1cc5ab71342` |
 | Confirm local CLI `0.39.1`, RPC chain ID `61999`, and no `61997` contamination | Automatable, read-only | CLI version and network-check output | Verified for this branch before deployment |
 | Build/deploy exact contract with the separately authorized operator wallet | CLI can submit; actual deployment requires wallet authorization and a broadcast | Deployment transaction, contract address, finality receipt | Blocked pending explicit deployment authorization |
 | Read canonical chain info and deployed source bytes | Automatable after deployment | Chain ID, `getContractCode` SHA-256 vs pinned source, canonical contract metadata | Blocked until deployment |
