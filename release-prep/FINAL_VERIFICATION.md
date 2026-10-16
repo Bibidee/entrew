@@ -48,7 +48,7 @@ The post-fix review found no further confirmed defect in the contract's reposito
 
 The independent verifier waited for the finalized receipt, checked the RPC chain ID, read finalized contract bytes through Studio's address-only `gen_getContractCode` call, matched those bytes to the reviewed source, and read canonical `get_info` at `LATEST_FINAL`. This is direct deployed-byte and canonical-state evidence; it is not a separate source-attestation service. The subsequent lifecycle transactions were broadcast only from the separately authorized unlocked test wallets and are recorded in the live evidence capture.
 
-`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment script was run once after the final preflight and produced the verified test deployment recorded below. The prior green GitHub Actions run is [38950698815](https://github.com/Bibidee/entrew/actions/runs/38950698815); the complete local rerun after the verifier fix is recorded above and will be rechecked by CI on this commit.
+`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment script was run once after the final preflight and produced the verified test deployment recorded below. Final GitHub Actions run [38972800049](https://github.com/Bibidee/entrew/actions/runs/38972800049) passed all checks on commit `69a1d1a5e63a1c7c49e5f3c1a9a62716ee76efd0`.
 
 ## Local verification
 
