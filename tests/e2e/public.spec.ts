@@ -53,6 +53,13 @@ test("explorer has no automated accessibility violations", async ({ page }) => {
   ).toEqual([]);
 });
 
+test("evidence query route has a level-one heading and no accessibility violations", async ({ page }) => {
+  await page.goto("/evidence?entry=e999");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Evidence record unavailable");
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations.map(({ id }) => id)).toEqual([]);
+});
+
 test("MetaMask and Rabby can be selected independently and switch to exact Studionet", async ({ page }) => {
   await page.addInitScript(() => {
     let chain = "0x1";
