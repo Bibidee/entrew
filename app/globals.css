@@ -148,20 +148,22 @@ select.control[multiple] { min-height: 84px; }
 .success-message { background: #edf7f1; color: #28644a; }
 .status-message { background: #eff2ff; color: #485681; }
 .decision-hero { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 20px; padding: 27px; border-radius: 21px; background: var(--midnight); color: white; }
-.decision-hero h2 { margin: 8px 0; font-size: clamp(23px,3vw,34px); }
+.decision-hero h1 { margin: 8px 0; font-size: clamp(23px,3vw,34px); }
+.decision-hero .card-meta { color: #d4dbec; }
+.record-empty-title { margin: 0 0 8px; font-size: clamp(25px,3vw,36px); }
 .decision-hero p { max-width: 650px; margin: 0; color: #c8cee0; font-size: 13px; }
 .decision-orb { width: 85px; height: 85px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); background: radial-gradient(circle, rgba(52,84,245,.45), rgba(52,84,245,.07) 70%); color: var(--coral); font-size: 30px; }
 .anatomy { display: grid; grid-template-columns: 60px minmax(0,1fr) auto; gap: 14px; align-items: start; padding: 18px 0; border-bottom: 1px solid #edf0f4; }
 .anatomy:last-child { border-bottom: 0; }
-.anatomy .index { color: #8b94a9; font: 800 12px Manrope,sans-serif; }
+.anatomy .index { color: var(--muted); font: 800 12px Manrope,sans-serif; }
 .anatomy h3 { margin: 0 0 5px; font-size: 15px; }
 .anatomy p { margin: 0; color: var(--muted); font-size: 12px; }
 .source-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
 .source-chip { max-width: 100%; padding: 5px 8px; border: 1px solid #e1e5ec; border-radius: 8px; color: #515d79; font: 10px ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap: anywhere; }
 .timeline { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 18px 0; }
-.timeline-step { padding: 12px; border-radius: 11px; background: #f4f5f8; color: #70798d; font-size: 10px; }
+.timeline-step { padding: 12px; border-radius: 11px; background: #f4f5f8; color: #4b566d; font-size: 10px; }
 .timeline-step strong { display: block; margin-bottom: 4px; color: var(--midnight); font-size: 11px; }
-.timeline-step.done { background: #eaf5ee; color: #47735b; }
+.timeline-step.done { background: #eaf5ee; color: #315d44; }
 .footer { padding: 32px 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 .footer-inner { width: min(1320px,100%); display: flex; justify-content: space-between; gap: 24px; margin: auto; }
 .modal-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(19,27,53,.45); backdrop-filter: blur(5px); }
