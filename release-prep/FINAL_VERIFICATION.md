@@ -1,6 +1,6 @@
 # ENTREW final release preparation report
 
-**Verdict: NOT SUBMISSION READY.** Preparation and local verification are complete. No live evidence exists for the updated source because it has not been deployed or assessed.
+**Verdict: NOT SUBMISSION READY.** The exact reviewed source is deployed and independently verified on Studionet 61999. Live lifecycle, fixture, semantic benchmark, frontend production QA and merge gates remain open.
 
 ## Review scope and findings
 
@@ -31,7 +31,24 @@ The post-fix review found no further confirmed defect in the contract's reposito
 | Live RPC response | `0xf22f` (`61999`) |
 | Repository-local GenLayer CLI | `0.39.1` |
 
-`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment command and options were inspected, but the deployment script was not run. GitHub Actions [run 38946356472](https://github.com/Bibidee/entrew/actions/runs/38946356472) passed on commit `d40887bcf96dd2e5170d1add5def8c710ad44b16`, including the release-prep, Python, Direct Mode, desktop Playwright, build and audit stages.
+## Verified remediation deployment — 2026-10-16
+
+| Item | Value |
+|---|---|
+| Studionet chain | `61999` (`https://studio.genlayer.com/api`) |
+| Contract address | `0x882D765Bc9c1a6A83091858620bC60212135d25b` |
+| Deployment transaction | [`0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`](https://explorer-studio.genlayer.com/tx/0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842) |
+| Deployer | `0x527dA5f7022f14f7105e5f06cec1a8eff53556b5` |
+| Transaction status | `FINALIZED` |
+| Execution | `SUCCESS`; result `MAJORITY_AGREE` |
+| Consensus | votes `AGREE, AGREE, AGREE, IDLE, IDLE`; committed `5`, revealed `5` |
+| Deployed source bytes | `57769` bytes; SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e` |
+| Reviewed source | SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob `8348ba2282fc062e9fe32e488245d536bd138334` |
+| Canonical `get_info` | `chain_id=61999, contract=EntrewRegistry, name=ENTREW, page_limit=25, schema_version=1` |
+
+The independent verifier waited for the finalized receipt, checked the RPC chain ID, read finalized contract bytes through Studio's address-only `gen_getContractCode` call, matched those bytes to the reviewed source, and read canonical `get_info` at `LATEST_FINAL`. This is direct deployed-byte and canonical-state evidence; it is not a separate source-attestation service. No lifecycle transaction was broadcast after deployment.
+
+`lib/network.ts` is unchanged from PR head. The deploy script is pinned to the consolidated candidate hash and refuses changed source. The deployment script was run once after the final preflight and produced the verified test deployment recorded below. GitHub Actions [run 38950006010](https://github.com/Bibidee/entrew/actions/runs/38950006010) passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`, including the release-prep, Python, Direct Mode, desktop Playwright, build and audit stages.
 
 ## Local verification
 
@@ -80,7 +97,7 @@ These are drafts, not executable or publish-ready fixtures. Fill the immutable c
 
 ## Deployment, live verifier and isolated frontend
 
-The read-only live verifier first proves its fixed RPC reports chain `61999`, then attests finalized deployed source bytes against the consolidated candidate SHA-256, checks finalized execution, reads canonical finalized state, and asserts repository/commit/wallet/program/nonce/marker/every-file/outcome/criteria/roster bindings. It requires positive, negative, corrected-r1, corrected-r2, unavailable-evidence and unauthorized-action assertions; an empty matrix cannot pass. It has syntax and offline regression validation only; it has not run against a new deployment.
+The read-only live verifier first proves its fixed RPC reports chain `61999`, then attests finalized deployed source bytes against the consolidated candidate SHA-256, checks finalized execution, reads canonical finalized state, and asserts repository/commit/wallet/program/nonce/marker/every-file/outcome/criteria/roster bindings. It requires positive, negative, corrected-r1, corrected-r2, unavailable-evidence and unauthorized-action assertions; an empty matrix cannot pass. It has now run against the new deployment for chain, source-byte, finality, execution and canonical-state verification. The required lifecycle matrix is still empty, so it correctly does not claim lifecycle evidence.
 
 The frontend smoke harness uses process-only local environment values, refuses the historical production contract address, and checks that each public read targets only the supplied test address with `latest-final`. It has syntax validation only because no new test contract address or live records exist. No `.env`, Vercel production setting, alias or existing production contract was changed.
 
@@ -89,7 +106,7 @@ Historical Vercel metadata identifies the production deployment as a dirty CLI s
 ### Wallet and external approvals required
 
 - Six distinct wallet roles are planned: deployer, organizer, positive/corrected applicant, negative applicant, unavailable-evidence applicant and unauthorized control. The corrected `r1`/`r2` writes use the same positive applicant wallet.
-- The deployer must approve/broadcast deployment; the organizer must sign program publication.
+- The deployer authorization was used once for the deployment above. The organizer must still sign program publication.
 - Each applicant must sign their entry/revision submission and every assessment write. The corrected revision requires a fresh revision submission and assessment signature.
 - The unauthorized control must sign (or explicitly reject) the forbidden cross-applicant mutation attempt; a reverted attempt is still a real signed transaction if broadcast.
 - Real browser wallet connection, network switching and signing prompts require user interaction in the wallet.
@@ -100,11 +117,11 @@ Once those approvals and identities are supplied, finality polling, canonical re
 
 ## Exact remaining blockers
 
-1. The consolidated candidate is committed and pushed to PR #6, and GitHub Actions run 38946356472 passed on the current head.
-2. No independently adjudicated and actually evaluated held-out semantic results; all benchmark error rates and accuracy remain unknown.
+1. The reviewed source is deployed and verified at `0x882D765Bc9c1a6A83091858620bC60212135d25b` with transaction `0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`; CI run 38950006010 passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
+2. No independently adjudicated and actually evaluated held-out semantic results; all benchmark error rates and accuracy remain unknown (0/40 evaluated).
 3. Fixture wallet addresses, temporary program ID, six immutable commits and fixture-write authorization are missing.
-4. No new Studionet deployment, source attestation or positive/negative/correction/unavailable/unauthorized live lifecycle evidence exists.
+4. No positive, negative, corrected-revision, unavailable-evidence or unauthorized-action lifecycle evidence exists for this new contract.
 5. No live test-contract frontend smoke or real-wallet browser QA exists.
 6. No production address/configuration was changed; production Vercel QA against the new contract remains pending explicit authorization.
 
-No deployment, transaction broadcast, fixture write, production configuration change or merge occurred in this run. Preserve the historical production contract and evidence as-is.
+One authorized deployment transaction occurred and was independently verified above. No lifecycle transaction, fixture write, production configuration change or merge occurred. Preserve the historical production contract and evidence as-is.

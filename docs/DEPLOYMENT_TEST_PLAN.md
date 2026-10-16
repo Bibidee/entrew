@@ -2,13 +2,13 @@
 
 ## Guardrails and preserved production state
 
-This is a preparation plan for PR #6, branch `audit/full-remediation`. It does not authorize a deployment, wallet transaction, Vercel environment change, fixture write, or merge. Do not use the historical production contract as the test target or overwrite its evidence.
+This is the release verification plan for PR #6, branch `audit/full-remediation`. The deployment was explicitly authorized and completed once. It does not authorize lifecycle transactions, fixture writes, Vercel environment changes or merge. Do not use the historical production contract as the test target or overwrite its evidence.
 
 - Target network: Studionet, chain ID `61999`.
 - Existing production contract to preserve: `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`.
 - Existing production deployment transaction to preserve: `0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127`.
 - Existing production frontend: [https://the-entrew.vercel.app](https://the-entrew.vercel.app). Its historical deployment metadata is a dirty CLI source tree; it must not be treated as an immutable Git-commit attestation.
-- New remediation deployment address/transaction: not created.
+- New remediation deployment: `0x882D765Bc9c1a6A83091858620bC60212135d25b`; transaction `0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`; finalized source-byte and canonical-state readback verified.
 - Production `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS`: unchanged; no Vercel environment operation was run.
 
 ## Wallet and fixture allocation
@@ -34,8 +34,8 @@ Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.c
 |---|---|---|---|
 | Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Starting PR head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` and blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. Consolidated candidate source SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob `8348ba2282fc062e9fe32e488245d536bd138334`. Record the final pushed PR commit before deployment. |
 | Confirm local CLI `0.39.1`, RPC chain ID `61999`, and no `61997` contamination | Automatable, read-only | CLI version and network-check output | Verified for this branch before deployment |
-| Build/deploy exact contract with the separately authorized operator wallet | CLI can submit; actual deployment requires wallet authorization and a broadcast | Deployment transaction, contract address, finality receipt | Blocked pending explicit deployment authorization |
-| Read canonical chain info and deployed source bytes | Automatable after deployment | Chain ID, `getContractCode` SHA-256 vs pinned source, canonical contract metadata | Blocked until deployment |
+| Build/deploy exact contract with the separately authorized operator wallet | CLI submission with the unlocked authorized wallet | Deployment `0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`, contract `0x882D765Bc9c1a6A83091858620bC60212135d25b`, finalized receipt | Complete; source bytes match `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e` |
+| Read canonical chain info and deployed source bytes | Read-only verifier after deployment finality | Chain `61999`, `getContractCode` SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e` and `get_info` canonical metadata | Complete; direct byte and canonical readback verified |
 | Set the new address in Vercel and redeploy | Vercel CLI can perform the operation; production change requires explicit authorization | Environment/deployment IDs, resulting production URL and config snapshot | Blocked by current no-production-change instruction; deploy from a clean checkout with `.vercelignore` applied |
 
 Do not overwrite the existing production address while preparing this test. A separate test project/deployment is preferred; if the existing production project must be changed later, use a reviewed change and preserve its current rollback configuration.
@@ -55,7 +55,7 @@ Do not overwrite the existing production address while preparing this test. A se
 | Reload/finality | Reload after submitted and finalized transaction | Browser assertions and canonical reads automatable | Wallet approval needed for originating write | No provisional state shown as final; canonical digest matches after reload |
 | Production frontend | Browse the redeployed URL at desktop and mobile widths | Playwright route/viewport/axe checks automatable | Real wallet connection flows require manual confirmation | URL/deployment ID, screenshots/logs, console, axe, responsive results |
 
-No transaction hashes, outcomes, or source attestations for these cases exist yet. Do not reuse the historical deployment's positive/negative transaction evidence for the remediation code.
+The deployment transaction and source attestation exist for the remediation code. No lifecycle transaction hashes or outcomes exist yet; do not reuse the historical deployment's positive/negative evidence for this contract.
 
 ## Benchmark execution boundary
 
@@ -63,4 +63,4 @@ The checked-in 40-case corpus is a post-prompt deterministic fixture set, not a 
 
 ## Decision gate
 
-Keep the remediation not submission-ready until all are true: exact-source deployment and canonical attestation; the positive and negative live lifecycles; wallet/retry/replay controls; source/commit evidence; Vercel production browser QA after an authorized deploy; and an independently authored, independently executed held-out semantic benchmark with actual result counts. CI success alone does not clear these gates.
+Keep the remediation not submission-ready until all are true: positive and negative live lifecycles; corrected revision; unavailable-evidence retry/cooldown; unauthorized and replay controls; fixture source/commit evidence; isolated frontend browser QA against the new contract; an independently executed held-out semantic benchmark with actual result counts; and a separate release decision for Vercel and merge. The exact-source deployment and canonical attestation gate is complete. CI success alone does not clear the remaining gates.

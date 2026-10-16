@@ -2,7 +2,7 @@
 
 This is the V1 requirement matrix. A test passing a subset does not mark an entire row or lifecycle complete. Execution evidence is summarized at the end and detailed in `../../docs/TEST_RESULTS.md`.
 
-The historical `LIVE-PROVEN` deployment and fixture rows below apply to the prior deployed source. The current remediation changes the contract and remains undeployed; local Direct Mode passes are not live Studionet evidence for it.
+The historical `LIVE-PROVEN` lifecycle rows below apply to the prior deployed source. The current remediation source has a separate Studionet test deployment; only its deployment, source-byte attestation and canonical network read are live-proven. Local Direct Mode passes are not live lifecycle evidence.
 
 ## A. Contract/Direct Mode
 
@@ -31,6 +31,19 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 ## Evidence quality categories
 
 `AUTOMATED-PASSED`, `LIVE-PROVEN`, `MANUALLY-PROVEN`, `TOOLING-LIMITED`, `PENDING`, `FAILED`. Every claimed outcome links to a precise test run, transaction or browser observation. CI cannot substitute for live validator judgments.
+
+## Current remediation execution status — 2026-10-16
+
+### LIVE-PROVEN
+
+- L01–L02: contract `0x882D765Bc9c1a6A83091858620bC60212135d25b`, deployment tx [`0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`](https://explorer-studio.genlayer.com/tx/0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842); chain `61999`; receipt `FINALIZED`, execution `SUCCESS`, result `MAJORITY_AGREE`; deployed source bytes SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e` exactly match the reviewed candidate; canonical `get_info` readback reports chain `61999`, `EntrewRegistry`, `ENTREW`, page limit `25`, schema version `1`.
+- No L03–L16 lifecycle or frontend row is live-proven for this new contract. No fixture write or lifecycle broadcast was performed after deployment.
+
+### PENDING
+
+- L03–L13: organizer/applicant lifecycle, corrected revision, unavailable evidence, retry/cooldown, unauthorized mutation, replay and wrong-network wallet behavior.
+- L14–L16: reload recovery, real desktop/mobile wallet/browser QA and full production bundle contamination review.
+- D semantic benchmark: 0/40 actual evaluator cases; no accuracy, false qualification, false rejection, inconclusive rate or validator disagreement is claimed.
 
 ## Historical production execution status — 2026-10-16
 
@@ -90,4 +103,4 @@ The starting PR #6 head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had contract 
 
 ## Consolidated release candidate — not deployed
 
-The candidate contract source SHA-256 is `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob ID `8348ba2282fc062e9fe32e488245d536bd138334`. It adds exact GitHub Contents path/blob/tree binding, accepts only GitHub LF/CRLF base64 wrapping, and uses `TransactionHashVariant.LATEST_FINAL` for browser canonical reads. The read-only release verifier now binds finalized transaction calldata and deployment bytes to the selected wallets, contract, methods and canonical arguments. Fresh checks passed: Node 5/5, release-prep 7/7, policy 17/17, mutations 4/4, Direct Mode 28/28, production build, and exported-build Playwright 10/10. GitHub Actions [run 38946356472](https://github.com/Bibidee/entrew/actions/runs/38946356472) passed on `d40887bcf96dd2e5170d1add5def8c710ad44b16`. Its exact-source deployment, source attestation, live lifecycle evidence, real-wallet browser QA, and held-out semantic evaluation remain pending.
+The candidate contract source SHA-256 is `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; Git blob ID `8348ba2282fc062e9fe32e488245d536bd138334`. It adds exact GitHub Contents path/blob/tree binding, accepts only GitHub LF/CRLF base64 wrapping, and uses `TransactionHashVariant.LATEST_FINAL` for browser canonical reads. The read-only release verifier binds finalized transaction calldata and deployment bytes to the selected wallets, contract, methods and canonical arguments, and uses Studio's address-only finalized code RPC. Fresh checks passed: Node 5/5, release-prep 7/7, policy 17/17, mutations 4/4, Direct Mode 28/28, production build, and exported-build Playwright 10/10. GitHub Actions [run 38950006010](https://github.com/Bibidee/entrew/actions/runs/38950006010) passed on `2454b258154c31c63ced0848d7bab9580d7efe0c`. The candidate source deployment and source attestation are complete; live lifecycle evidence, real-wallet browser QA and held-out semantic evaluation remain pending.

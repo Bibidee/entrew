@@ -1,13 +1,16 @@
 # Deployment record and runbook
 
-## Remediation branch — not deployed
+## Remediation branch and verified test deployment
 
-- Branch: `audit/full-remediation`, based on verified `origin/main` commit `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`.
-- Earlier PR #6 remediation snapshot: contract commit `d64552d38cbd244b647060f1c045550e2a484237`, source SHA-256 `c8836a1cef11f6e969f0913d5eae9026a77d705bae8168584b6221ffbe2fb898`. It is historical, not the current release candidate.
-- Starting PR #6 head: `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f`, source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`, Git blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. It is also historical after the consolidation fixes.
-- Consolidated release candidate: source SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`, Git blob `8348ba2282fc062e9fe32e488245d536bd138334`. The deployment script refuses any source whose SHA-256 differs from this value.
-- The current contract fix has not been deployed. No production Vercel environment value or alias was changed. The live address and transaction below are historical evidence for the previous source version only.
-- Adoption requires a separately authorized Studionet deployment of the exact reviewed source, followed by source-byte comparison, finality/readback checks, and frontend configuration/deployment. The current task's checks are local Direct Mode and browser evidence, not live proof for the modified contract.
+- Branch: `audit/full-remediation`, current reviewed commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
+- Consolidated candidate source SHA-256: `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`, Git blob `8348ba2282fc062e9fe32e488245d536bd138334`. The deployment script remains pinned to this hash.
+- Studionet chain: `61999`; RPC `https://studio.genlayer.com/api`; CLI `0.39.1`; GenLayerJS `1.1.8`.
+- New test contract: `0x882D765Bc9c1a6A83091858620bC60212135d25b`.
+- Deployment transaction: [`0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842`](https://explorer-studio.genlayer.com/tx/0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842).
+- Deployer: `0x527dA5f7022f14f7105e5f06cec1a8eff53556b5`.
+- Independent readback: `FINALIZED`, `SUCCESS`, `MAJORITY_AGREE`; deployed bytes `57769` and SHA-256 `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`; canonical `get_info` reports chain `61999`, `EntrewRegistry`, `ENTREW`, page limit `25`, schema version `1`.
+- The existing production contract, Vercel address and historical evidence remain unchanged. No fixture repository write, lifecycle transaction or merge occurred after this deployment.
+- GitHub Actions [run 38950006010](https://github.com/Bibidee/entrew/actions/runs/38950006010) passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
 
 ## Last recorded production release — 2026-10-16
 
@@ -58,7 +61,7 @@ The positive claim marker is at commit `2dce6f15a507aca0b26dbd8c85214ad5faaade73
 
 ## Remaining checks
 
-The requested deploy, production configuration, and positive/negative finalized lifecycle have been completed. The broader matrix is not complete: corrected-revision recovery, live inconclusive retry/cooldown, live replay and unauthorized-wallet controls, wrong-network real-wallet behavior, full mobile/manual accessibility review, and an independently held-out semantic benchmark remain open. See `docs/TEST_RESULTS.md` and `entrew/docs/TEST_MATRIX.md`.
+The historical production release completed its deploy, production configuration, and positive/negative finalized lifecycle. The separate remediation test deployment above has no lifecycle transactions yet. The broader matrix is not complete: corrected-revision recovery, live inconclusive retry/cooldown, live replay and unauthorized-wallet controls, wrong-network real-wallet behavior, full mobile/manual accessibility review, and an independently held-out semantic benchmark remain open. See `docs/TEST_RESULTS.md` and `entrew/docs/TEST_MATRIX.md`.
 
 ## Network pins
 
