@@ -79,5 +79,6 @@ Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e
 - `npm run check`: passed: Node 5, policy 15, mutation 4, Direct Mode 16; typecheck, lint and production build also passed.
 - `npm run test:e2e`: 10/10 passed across desktop/mobile projects; seven routes and six viewport widths, route axe scans, and keyboard wallet-modal test.
 - `npm audit`: 0 vulnerabilities.
+- GitHub Actions [run 38915365843](https://github.com/Bibidee/entrew/actions/runs/38915365843) passed the PR workflow on the tested branch head.
 
 The added Direct Mode regression reproduces the raw fallback ambiguity: a raw marker 404 stays `INCONCLUSIVE`; malformed API evidence can recover through raw fallback; provider and source failures retain differentiated issue codes. None of these results is `LIVE-PROVEN`. All L01–L16 live checks for the modified source remain pending until an authorized deployment and controlled wallet actions are completed. The held-out semantic benchmark also remains pending.

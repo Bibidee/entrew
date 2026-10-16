@@ -34,6 +34,7 @@ These commit, hash, CI, deployment, and lifecycle records describe the prior pro
 | `npm run check` | Passed: TypeScript, ESLint, Node 5/5, Python policy 15/15, mutation probes 4/4, Direct Mode 16/16, and static production build. |
 | `npm run test:e2e` | Passed 10/10 across desktop and mobile Playwright projects. All seven routes passed viewport checks at 320, 375, 390, 768, 1280, and 1440 px; route-level axe checks passed; wallet modal keyboard test passed. |
 | `npm audit` | Passed; 0 vulnerabilities. |
+| GitHub Actions for PR #6 | Run [38915365843](https://github.com/Bibidee/entrew/actions/runs/38915365843) passed all workflow steps on branch commit `44ce1ef71fc699f058f3bf2fa3b6d5671edd2409`, including dependency install, CLI/network checks, all test suites, desktop Playwright, build, and audit. |
 
 The browser suite uses the local unconfigured test app and test wallets. It does not verify production rendering or real-wallet signing for the remediation source. Direct Mode is local simulator evidence, not live Studionet evidence.
 
