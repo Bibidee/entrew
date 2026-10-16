@@ -15,13 +15,19 @@ GitHub source, repository prose, comments, filenames, and the claim marker are d
 
 The app does not claim the wallet maps to a human, that the applicant authored the Git commit, or that a commit signature is verified. A claim marker is only a revision-bound wallet/program/repository/nonce claim. The app has no GitHub credential, decision API, backend, or local decision cache.
 
-## Release blockers and residual risks
+## Live verification
 
-- The GenVM compatibility of Python `hashlib`, `json`, `re`, base64 validation, response-size enforcement, storage access, time semantics, and the current nondeterministic request/prompt API has not been executed on GenLayer 0.39.1 or Studionet.
-- Public unauthenticated GitHub API limits can make valid evidence unavailable. The code should fail closed to `INCONCLUSIVE`; this could limit usability.
-- Semantic quality, false outcomes, validator disagreement, and prompt-injection resistance have not been benchmarked with live validators. The checked-in 40 cases are post-prompt authoring fixtures, not an independent holdout.
-- Runtime/API response redirects, GitHub API representation/size behavior, and exact on-chain deadline timestamp semantics still need direct tests.
-- The UI, deep links, MetaMask/Rabby selection, provider races, and narrow viewports have not had browser QA.
-- No deployment source attestation, contract address, production site, or real positive/negative lifecycle evidence exists.
+The contract was deployed to Studionet `61999`. Its `getContractCode` readback hashes to the same SHA-256 as the tracked source. A real positive fixture was finalized as `QUALIFIED` with all criteria `MET` and included in the qualified roster. A real negative fixture was finalized as `NOT_ESTABLISHED` with a `NOT_MET` criterion and omitted from that roster. Both outcomes had revision-bound provenance and canonical state readback. Exact hashes and receipt notes are in `docs/DEPLOYMENT.md`.
 
-Do not deploy this code as an eligibility or hiring decision service until these checks are resolved and reviewed.
+The deployment and negative assessment validator receipts reported cancellation/error after consensus quorum was reached. SDK finality and canonical state were confirmed; this receipt detail is retained rather than described as clean unanimous validator success.
+
+## Residual risks and open coverage
+
+- Live deployment and two outcomes exercise the pinned runtime's actual evidence fetch, prompt, validator and storage path. They do not cover every GenVM response edge, size boundary, time boundary, or failure mode.
+- Public unauthenticated GitHub API limits can make valid evidence unavailable. The code is intended to fail closed to `INCONCLUSIVE`; a controlled live 403/429/5xx lifecycle was not performed.
+- Semantic quality, false outcomes, validator disagreement and prompt-injection resistance have not been measured on an independent held-out corpus. The checked-in 40 cases are post-prompt authoring fixtures, not a holdout.
+- Live corrected-revision, retry/cooldown, replay, unauthorized-wallet and deadline-boundary controls remain untested.
+- The production app was reviewed in Brave and the evidence detail passed a focused axe audit with zero violations. Full keyboard-only and manual mobile review remain open; a repeated headless production route sweep also encountered an intermittent RPC fetch failure.
+- The on-chain code-byte comparison is not an independent attestation service or a guarantee about build provenance.
+
+Do not treat the two successful lifecycle outcomes as an independent semantic accuracy benchmark or as a completed adversarial audit. See `entrew/docs/TEST_MATRIX.md` for the outstanding cases.
