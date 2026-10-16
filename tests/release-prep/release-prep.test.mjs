@@ -38,6 +38,15 @@ test("the live verifier fails closed on network identity and incomplete lifecycl
   assert.doesNotMatch(verifier, /for \(const testCase of config\.cases \|\| \[\]\)/);
 });
 
+test("a provider outage is diagnosed before marker-hash comparison", () => {
+  const outageCheck = verifier.indexOf('review.provenance === "PROVIDER_UNAVAILABLE"');
+  const markerCheck = verifier.indexOf("marker hash mismatch.");
+  assert.notEqual(outageCheck, -1);
+  assert.notEqual(markerCheck, -1);
+  assert.ok(outageCheck < markerCheck);
+  assert.match(verifier, /provider outage before marker hash comparison/);
+});
+
 test("the qualified roster deduplicates a corrected revision that shares its entry", () => {
   assert.match(verifier, /const requiredQualified = \[\.\.\.new Set\(\[/);
   assert.match(verifier, /requireValue\(positive\.entry_id, "positive\.entry_id"\)/);

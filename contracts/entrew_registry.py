@@ -576,7 +576,8 @@ def _review_snapshot(snapshot_json, criteria_json):
 
 def _api_url(owner, repo, suffix):
     # Every caller supplies already-normalized segments and a fixed route suffix.
-    return GITHUB_API + "/repos/" + owner + "/" + repo + "/" + suffix
+    repository_url = GITHUB_API + "/repos/" + owner + "/" + repo
+    return repository_url if suffix == "" else repository_url + "/" + suffix
 
 
 def _unverifiable(criteria, provenance, issue_code, repo, commit_sha, files=None, marker_digest=""):

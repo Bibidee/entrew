@@ -14,6 +14,7 @@ PURE_HELPERS = {
     "_canonical_path", "_normalize_snapshot", "_snapshot_digest",
     "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body",
     "_fetch_response", "_fetch_json", "_provider_issue_code", "_validate_source_content",
+    "_api_url",
 }
 TREE = ast.parse(CONTRACT.read_text(encoding="utf-8"))
 FUNCTIONS = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in PURE_HELPERS]
@@ -102,6 +103,24 @@ class ContractPolicyTests(unittest.TestCase):
         for owner, repo in [("owner@evil.test", "repo"), ("owner", "../repo"), ("owner", "repo?x=1"), ("..", "repo")]:
             with self.subTest(owner=owner, repo=repo), self.assertRaises(ValueError):
                 NAMESPACE["_canonical_repo"](owner, repo)
+
+    def test_repository_api_url_has_no_trailing_slash_and_routes_remain_exact(self):
+        api_url = NAMESPACE["_api_url"]
+        repository = "https://api.github.com/repos/bibidee/entrew-fixtures"
+        self.assertEqual(api_url("bibidee", "entrew-fixtures", ""), repository)
+        self.assertNotEqual(api_url("bibidee", "entrew-fixtures", ""), repository + "/")
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "git/commits/" + "a" * 40),
+            repository + "/git/commits/" + "a" * 40,
+        )
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "git/trees/" + "b" * 40),
+            repository + "/git/trees/" + "b" * 40,
+        )
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "contents/.entrew/claim.json?ref=" + "c" * 40),
+            repository + "/contents/.entrew/claim.json?ref=" + "c" * 40,
+        )
 
     def test_paths_reject_traversal_encoded_separators_and_arbitrary_hosts(self):
         canonical = NAMESPACE["_canonical_path"]

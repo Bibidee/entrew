@@ -14,7 +14,7 @@ const SOURCE_PATH = resolve(HERE, "../contracts/entrew_registry.py");
 const RPC = "https://studio.genlayer.com/api";
 const CHAIN_ID = 61999;
 const PRODUCTION_ADDRESS = "0xf37C3D7992833A876Bb2933c09b11bD49FC817ca";
-const SOURCE_HASH = "cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e";
+const SOURCE_HASH = "b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8";
 const STATUS_FINALIZED = TransactionStatus.FINALIZED;
 const SUCCESS_EXECUTIONS = new Set([String(ExecutionResult.FINISHED_WITH_RETURN), "SUCCESS"]);
 const client = createClient({ chain: studionet });
@@ -303,6 +303,10 @@ for (const testCase of matrix.values()) {
   if (revision.applicant.toLowerCase() !== expectedWallet || revision.program_id !== programId || revision.claim_nonce !== expectedNonce) throw new Error(testCase.case_id + " wallet/program/nonce binding mismatch.");
   assertRevisionSubmissionArgs(submissionBinding, revision, programId, initialSubmission, testCase.case_id + " submission transaction");
   if (review.repo.toLowerCase() !== expectedRepository.toLowerCase() || review.commit_sha !== expectedCommit) throw new Error(testCase.case_id + " review source binding mismatch.");
+  if (review.provenance === "PROVIDER_UNAVAILABLE") {
+    const issue = requireValue(review.issue_code, testCase.case_id + ".review.issue_code");
+    throw new Error(testCase.case_id + " provider outage before marker hash comparison: " + issue + ".");
+  }
   const expectedMarkerHash = requireSha256(testCase.expected_marker_sha256, testCase.case_id + ".expected_marker_sha256");
   if (review.marker_sha256 !== expectedMarkerHash) throw new Error(testCase.case_id + " marker hash mismatch.");
   const actualFiles = new Map(review.files.map(file => [file.path, file]));

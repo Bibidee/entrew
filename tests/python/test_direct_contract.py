@@ -91,7 +91,7 @@ def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, s
     marker_tree_sha = "2" * 40
     source_tree_sha = "3" * 40
     docs_tree_sha = "4" * 40
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps(repo_response if repo_response is not None else {"full_name": repo})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry$", {"status": 200, "body": json.dumps(repo_response if repo_response is not None else {"full_name": repo})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 200, "body": json.dumps(commit_response if commit_response is not None else {"sha": sha, "tree": {"sha": root_tree_sha}})})
     marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": nonce}
     marker_blob_sha = git_blob_sha(json.dumps(marker, separators=(",", ":")).encode("utf-8"))
@@ -188,6 +188,24 @@ def test_real_contract_review_persists_only_final_qualified_result(direct_vm, di
         direct_vm.sender = direct_bob
         contract.submit_revision(entry_id, "b" * 40, '["src/runtime.py","docs/usage.md"]', '{"0":["src/runtime.py"],"1":["docs/usage.md"]}', "b" * 32)
     assert contract.get_entry_revision_count(entry_id) == 1
+
+
+def test_repository_lookup_rejects_the_malformed_trailing_slash_url(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "f" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob)
+    # GitHub returns 404 for this malformed repository endpoint. Keeping this
+    # separate from the exact URL proves the contract never accepts both forms.
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/$", {"status": 404, "body": "{}"})
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "REVISION_BOUND"
 
 
 def test_negative_proof_survives_an_unavailable_other_criterion(direct_vm, direct_deploy, direct_alice, direct_bob):
@@ -429,7 +447,7 @@ def test_raw_malformed_marker_cannot_reject_without_verified_repository(direct_v
     sha = "8" * 40
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
 
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 403, "body": "rate limited"})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry$", {"status": 403, "body": "rate limited"})
     raw = r"raw\.githubusercontent\.com/example/registry/" + sha + r"/"
     # A hostile or stale raw marker could otherwise turn an API outage into a
     # conclusive mismatch, despite no repository/commit identity proof.
@@ -450,7 +468,7 @@ def test_raw_positive_marker_and_evidence_cannot_qualify_without_verified_commit
     sha = "9" * 40
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
 
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 403, "body": "rate limited"})
     marker = {
         "program_id": program_id,
@@ -483,7 +501,7 @@ def test_raw_positive_evidence_cannot_override_commit_sha_mismatch(direct_vm, di
     sha = "5" * 40
     entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
 
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry$", {"status": 200, "body": json.dumps({"full_name": "example/registry"})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/git/commits/" + sha, {"status": 200, "body": json.dumps({"sha": "4" * 40})})
     marker = {
         "program_id": program_id,

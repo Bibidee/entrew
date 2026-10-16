@@ -1,6 +1,6 @@
 {
   "benchmark_id": "entrew-heldout-semantic-v1",
-  "target_contract_source_sha256": "cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e",
+  "target_contract_source_sha256": "b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8",
   "chain_id": 61999,
   "evaluator_status": "NOT_CONFIGURED",
   "live_scoring_status": "NOT_RUN",
