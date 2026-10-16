@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-16. This ledger records observed evidence; unresolved matrix items remain explicit.
 
-**Historical release record:** the deployment and lifecycle evidence below applies to the source hashes recorded here, before remediation branch `audit/full-remediation` (base `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`). The remediation branch changes the contract and has not been deployed. Do not interpret this ledger as live evidence for the modified contract. Current status is in `../../docs/DEPLOYMENT.md` and `../../docs/TEST_RESULTS.md`.
+**Historical release record:** the deployment and lifecycle evidence below applies to the source hashes recorded here, before remediation branch `audit/full-remediation` (base `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`, contract source commit `d64552d38cbd244b647060f1c045550e2a484237`). The remediation branch changes the contract and has not been deployed. Do not interpret this ledger as live evidence for the modified contract. Current status is in `../../docs/DEPLOYMENT.md` and `../../docs/TEST_RESULTS.md`.
 
 ## Source and provenance
 

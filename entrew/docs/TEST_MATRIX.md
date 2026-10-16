@@ -71,7 +71,7 @@ See `../../docs/TEST_RESULTS.md` and `../../docs/DEPLOYMENT.md` for full hashes,
 
 ## Remediation branch execution status — 2026-10-16
 
-Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e56769` and is not deployed. Verified local results for this source:
+Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`, with contract source commit `d64552d38cbd244b647060f1c045550e2a484237`, and is not deployed. Verified local results for this source:
 
 - `npm ci`: passed, 525 packages, 0 install-time vulnerabilities.
 - `py -3.13 -m pip install -r requirements-test.txt`: passed; Python 3.11 does not satisfy `genlayer-test==0.29.2`.

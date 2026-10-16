@@ -18,6 +18,7 @@ These commit, hash, CI, deployment, and lifecycle records describe the prior pro
 ## Remediation branch snapshot — 2026-10-16
 
 - Branch: `audit/full-remediation`; base `origin/main` commit `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`.
+- Remediation contract source commit: `d64552d38cbd244b647060f1c045550e2a484237`.
 - Contract source Git-stored LF blob SHA-256: `c8836a1cef11f6e969f0913d5eae9026a77d705bae8168584b6221ffbe2fb898`. It differs from the historical deployed source hash above.
 - Production contract, Vercel environment, and production alias were not changed during this remediation.
 - New checks on this source are local policy tests and GenLayer Direct Mode. They cannot substitute for redeploying and testing live Studionet behavior.
