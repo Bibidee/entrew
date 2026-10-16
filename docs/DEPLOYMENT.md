@@ -1,44 +1,55 @@
 # Deployment record and runbook
 
-## Current production record
+## Current production record — 2026-10-16
 
-- Frontend: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
-- Vercel project: `the-entrew` in the `bibidees-projects` team.
-- Production deployment: [READY · EndQrms6feF8MUdbE9ipUYha76ea](https://vercel.com/bibidees-projects/the-entrew/EndQrms6feF8MUdbE9ipUYha76ea), built from code commit `090968f8d6c346f1fa787d9f2685e8bce83f1356`.
-- Static export output is configured as `out` in `vercel.json`.
-- The frontend is intentionally unconfigured: `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS` is empty. It shows no fabricated programs, counts, or results.
-- The project was created and deployed with the Vercel CLI from this local checkout. GitHub automatic deployment is not connected; a future Vercel release currently requires a CLI deployment.
-- Contract source SHA-256 and verification evidence are recorded in `docs/TEST_RESULTS.md`. The hash is not an on-chain source attestation.
+- Frontend alias: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
+- Vercel project: `the-entrew` in team `bibidees-projects`.
+- Latest production deployment: [READY · dpl_8Y5SPk1HZ5KHPreZzSXLUDGVrS4A](https://vercel.com/bibidees-projects/the-entrew/8Y5SPk1HZ5KHPreZzSXLUDGVrS4A), URL [https://the-entrew-qqznmpl9w-bibidees-projects.vercel.app](https://the-entrew-qqznmpl9w-bibidees-projects.vercel.app).
+- Production environment: `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`, chain ID `61999`, RPC `https://studio.genlayer.com/api`.
+- The environment variable was updated with the Vercel CLI and the frontend redeployed after the address was set.
+- The deployment contains the accessibility fixes merged in PR #4 at `24d805dc3f6c61d07641161fa04fec70e4a55d8a`. The deployed contract source is unchanged from PR #3 at `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5`.
 
-This is a hosted frontend release, not an on-chain product release. No Studionet address, transaction hash, live validator result, or source attestation exists.
+## Contract and source integrity
+
+- Chain: GenLayer Studionet `61999` (`0xf22f`).
+- Contract: `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`.
+- Deployment transaction: [`0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127`](https://explorer-studio.genlayer.com/tx/0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127).
+- Receipt: `FINALIZED`, `MAJORITY_AGREE`, leader execution `SUCCESS`. The validator receipt reported an error after quorum was reached and the validator was cancelled; consensus and canonical reads completed.
+- Contract source SHA-256: `9bf815285cd31ed4fb14769dca8e2fa1755c36b91c5a0cf325660ba777891fcc`.
+- RPC `getContractCode` readback hashes to the exact same SHA-256 as the tracked contract source. This is direct deployed-code byte comparison, not a separate attestation service.
+- Canonical `get_info`: `{"chain_id":61999,"contract":"EntrewRegistry","name":"ENTREW","page_limit":25,"protocol_outcomes_are_product_results":false,"schema_version":1}`.
+- No active-source reference to prohibited chain `61997` was found by the network check.
+
+## Live lifecycle evidence
+
+The designated public fixture repository is [Bibidee/entrew-fixtures](https://github.com/Bibidee/entrew-fixtures). It is separate from the product repository. The user authorized its use and marker writes for these controlled checks.
+
+| Action | Transaction | Finalized canonical result |
+|---|---|---|
+| Publish test program `p1` | `0xd6e7d5400d57a7e6babefc08d87d1ef47a3ae2357d73c0e2ac159714c5d18e22` | `FINALIZED`, `MAJORITY_AGREE`; leader and validator success. Canonical terms digest `7c513eeae1a84ce02621e07fa55272c5b6cc0dd09a9c2da606e8c4a7309b6b82`. |
+| Positive applicant submit `e1:r1` | `0xb40732b8881c45aceebf238b048f7a0c05ec467d809de20c10e08050812fda2a` | `FINALIZED`, `MAJORITY_AGREE); canonical entry `e1`. |
+| Positive assessment | `0x1e660ab0ff7a885f42ce0677a70e6d776debd63f9354bd260fe3c8a8708ba79e` | `FINALIZED`, `MAJORITY_AGREE`; `QUALIFIED`, both criteria `MET`, provenance `REVISION_BOUND`, issue `NONE`; `e1` appears in the qualified roster. |
+| Negative applicant submit `e2:r1` | `0x7169872045f7d094d03cdc7d03e80b5f03870daf266b45a06f58627c9572c7f2` | `FINALIZED`, `MAJORITY_AGREE); canonical entry `e2`. |
+| Negative assessment | `0x44feb87f02a28d923894c7b6bf1da4cd0afa4b0890a8974f3a1e123c8f77eca8` | SDK finality wait and canonical reads confirmed `FINALIZED`, `MAJORITY_AGREE`; `NOT_ESTABLISHED`, criterion vector `[NOT_MET, MET]`, provenance `REVISION_BOUND`, issue `NONE`; `e2` is absent from the qualified roster. Validator cancellation was reported after quorum. |
+
+The later RPC lookup for the negative assessment hash briefly returned “not found”; the finalized SDK result and canonical contract readback remained available and showed the expected state. Do not interpret a transient lookup failure as a state rollback.
+
+The positive claim marker is at commit `2dce6f15a507aca0b26dbd8c85214ad5faaade73`; its marker SHA-256 is `f1ee76766a0e423b75126cb33e90b46defd5180725ad77e3c53cda1138572555`. The negative marker is at commit `030ef93dad30a4b40a6fdcf44deaf84b78252a81`; its marker SHA-256 is `d181eee57c77292fbfff1ce2b78228b0a59330992a5b9fda7d52f8f41cd317ab`. Both markers bind program `p1`, the applicant wallet, the fixture repository and a unique nonce at the assessed commit.
 
 ## Completed release preflight
 
-1. `package-lock.json` is committed; `npm ci` passes in GitHub Actions.
-2. `npm run cli:version` and `npm run cli:local-version` report exactly `0.39.1`.
-3. `npm run network:check` passes the active-source contamination scan and confirms RPC chain ID `61999` (`0xf22f`).
-4. `npm run check` passes locally. GitHub Actions run `38886003320` passes on Linux, including Direct Mode, browser tests, build, and dependency audit.
-5. Production static export is deployed to Vercel and reached `READY`. Production route, reload, responsive, accessibility, and mock-wallet checks are recorded in `docs/TEST_RESULTS.md`.
+- `package-lock.json` is committed; CI `npm ci` passed.
+- Repository-local GenLayer CLI is `0.39.1`; GenLayerJS is `1.1.8`.
+- Studionet RPC returned chain ID `61999`; the active-source scan found no `61997`.
+- GitHub Actions run [38894822355](https://github.com/Bibidee/entrew/actions/runs/38894822355) passed the full CI workflow for PR #4, including CLI/network checks, type/lint, unit and policy checks, Direct Mode, Playwright, build and dependency audit.
+- Vercel production build reached `READY` after the address was configured.
 
-## Remaining release steps
+## Remaining checks
 
-1. From a controlled wallet configured for Studionet `61999`, run `npm run deploy:studionet`. The script checks the RPC and local CLI before submitting `contracts/entrew_registry.py`; the user must authorize/sign the transaction in the wallet.
-2. Record the contract address and deployment transaction. Independently verify finalized successful execution, `FINISHED_WITH_RETURN`, network identity, and canonical `get_info` readback.
-3. Compare deployed source bytes or supported source attestation with SHA-256 `FA351D5423A96FFA3D3EC145E3A7B45A20F9D140BFA7D70F0AAE48B897A5C0AC`. If attestation is unsupported, record that limitation.
-4. Only after those checks, set `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS` to the verified address and rebuild/redeploy the frontend. Do not reuse a stale address after any contract source change.
-5. Use separate controlled organizer/applicant wallets and public fixture repositories to verify a positive lifecycle, a negative lifecycle, finalized canonical roster reads, corrected revision, replay/authorization boundaries, and refresh recovery. Record only observed transaction and source evidence.
-6. If the GitHub fixture marker must be written, use a public fixture repository where the user has explicitly granted write access; keep test fixtures separate from the product repository.
+The requested deploy, production configuration, and positive/negative finalized lifecycle have been completed. The broader matrix is not complete: corrected-revision recovery, live inconclusive retry/cooldown, live replay and unauthorized-wallet controls, wrong-network real-wallet behavior, full mobile/manual accessibility review, and an independently held-out semantic benchmark remain open. See `docs/TEST_RESULTS.md` and `entrew/docs/TEST_MATRIX.md`.
 
 ## Network pins
 
-- Chain: GenLayer Studionet `61999`.
-- RPC: `https://studio.genlayer.com/api`.
-- Explorer: `https://explorer-studio.genlayer.com`.
-- Local CLI: GenLayer `0.39.1`.
-- JavaScript SDK: `genlayer-js 1.1.8`.
-- The contract starts with a pinned `py-genlayer` runtime hash so deployment and Direct Mode use the same SDK line.
-- Alternate/preview chain `61997` is prohibited.
-
-## Post-contract browser release check
-
-The current production browser checks verify only the intentionally unconfigured state. After adding a real contract address, repeat production reads and writes using actual wallets, verify finalized canonical reads and roster contents, and retest the exact query-ID routes after reload. Mock-wallet and static placeholder checks are not live transaction evidence.
+- Studionet chain `61999`, RPC `https://studio.genlayer.com/api`, explorer `https://explorer-studio.genlayer.com`.
+- CLI `0.39.1`; GenLayerJS `1.1.8`.
+- Alternate chain `61997` is prohibited.
