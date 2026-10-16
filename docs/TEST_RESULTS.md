@@ -2,6 +2,12 @@
 
 This file records checks that actually ran and separates them from authored but unexecuted suites. The original handoff matrix remains at `entrew/docs/TEST_MATRIX.md`.
 
+## Source integrity snapshot
+
+- Source commit: `85148b9b58b4a9035c6247e06529057e5fdf441c`
+- SHA-256 of the checkout file `contracts/entrew_registry.py`: `035D5C4357ADB92594D51C4DE74E9078464F5ECD2FE1AF06736B87E73BF74A50`
+- This is a local repository integrity record, not a deployed-source attestation.
+
 ## Checks that passed
 
 | Check | Result |
