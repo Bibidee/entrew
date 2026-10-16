@@ -23,6 +23,12 @@ def digest_json(value):
     return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
 
 
+def file_sha256(path):
+    """Hash repository text with LF semantics on every checkout platform."""
+    content = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 def require_sha256(value, label):
     if not isinstance(value, str) or not SHA256.fullmatch(value):
         raise ValueError(f"{label} must be a lowercase SHA-256 digest")
@@ -34,12 +40,12 @@ def validate_corpus():
     gold_ids = [x["case_id"] for x in gold]
     if len(cases) != 40 or len(set(ids)) != 40 or set(ids) != set(gold_ids) or len(gold_ids) != 40:
         raise ValueError("expected 40 unique inputs and a matching answer key")
-    input_sha = hashlib.sha256(CASES.read_bytes()).hexdigest()
+    input_sha = file_sha256(CASES)
     if manifest.get("input_sha256") != input_sha:
         raise ValueError("held-out evaluator inputs do not match the frozen manifest digest")
     comparison = manifest.get("comparison_baseline", {})
     baseline_path = CASES.parents[2] / comparison.get("path", "")
-    if not baseline_path.is_file() or hashlib.sha256(baseline_path.read_bytes()).hexdigest() != comparison.get("sha256"):
+    if not baseline_path.is_file() or file_sha256(baseline_path) != comparison.get("sha256"):
         raise ValueError("post-prompt comparison corpus does not match the manifest digest")
     baseline = read(baseline_path)
     def case_spec(case):

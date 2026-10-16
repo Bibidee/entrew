@@ -13,7 +13,7 @@
   "input_sha256": "8f1c41269bffb3e9bc7774711d966c785b67f03a8fbb1c41f0fda1ba85bad7ac",
   "comparison_baseline": {
     "path": "tests/benchmark/cases.json",
-    "sha256": "95242605ed56eda173542ca3ce0c7c90b2cc5fbcc9d04f15a5a57710d2844612",
+    "sha256": "728f283d0d6c99e28fc71074c3c7973cc64c7fab376c1870a6c32bdb42fc604a",
     "case_id_overlap": 0,
     "rubric_path_mapping_overlap": 0
   }

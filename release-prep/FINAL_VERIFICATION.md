@@ -47,7 +47,7 @@ The Playwright suite uses the local unconfigured app and simulated wallet provid
 
 ## Held-out semantic benchmark
 
-The new corpus is independent of the post-prompt fixture file: both case-ID overlap and exact rubric/path/mapping overlap are zero. Its frozen input digest is `8f1c41269bffb3e9bc7774711d966c785b67f03a8fbb1c41f0fda1ba85bad7ac`; the comparison corpus digest is `95242605ed56eda173542ca3ce0c7c90b2cc5fbcc9d04f15a5a57710d2844612`.
+The new corpus is independent of the post-prompt fixture file: both case-ID overlap and exact rubric/path/mapping overlap are zero. Its frozen input digest is `8f1c41269bffb3e9bc7774711d966c785b67f03a8fbb1c41f0fda1ba85bad7ac`; the comparison corpus LF-normalized digest is `728f283d0d6c99e28fc71074c3c7973cc64c7fab376c1870a6c32bdb42fc604a`.
 
 **Actual semantic evaluation: 0/40.** No actual evaluator endpoint is configured, and GenLayer evaluation requires the prohibited deployment and assessment transactions. The gold labels have not been independently blind-adjudicated.
 
