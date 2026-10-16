@@ -4,7 +4,7 @@ This file records observed checks separately from authored but unexecuted covera
 
 ## Historical production release snapshot — 2026-10-16 (before this remediation branch)
 
-- Current product main commit after the accessibility patch: `24d805dc3f6c61d07641161fa04fec70e4a55d8a`.
+- Historical Git reference after the accessibility patch: `24d805dc3f6c61d07641161fa04fec70e4a55d8a`. Vercel records the deployed production source as a dirty CLI tree anchored to `c421e35607e9d036812fc519854fbb0bfd456554`, so neither value is whole-artifact Git provenance.
 - Contract source commit: `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5`; later UI changes did not change the contract.
 - Contract source SHA-256: `9bf815285cd31ed4fb14769dca8e2fa1755c36b91c5a0cf325660ba777891fcc`.
 - Studionet contract: `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`; deployment tx `0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127`.
@@ -15,7 +15,7 @@ This file records observed checks separately from authored but unexecuted covera
 
 These commit, hash, CI, deployment, and lifecycle records describe the prior production source. They do not apply to the contract modifications on this branch.
 
-## Remediation branch snapshot — 2026-10-16
+## Earlier remediation snapshot — historical
 
 - Branch: `audit/full-remediation`; base `origin/main` commit `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`.
 - Remediation contract source commit: `d64552d38cbd244b647060f1c045550e2a484237`.
@@ -38,9 +38,9 @@ These commit, hash, CI, deployment, and lifecycle records describe the prior pro
 
 The browser suite uses the local unconfigured test app and test wallets. It does not verify production rendering or real-wallet signing for the remediation source. Direct Mode is local simulator evidence, not live Studionet evidence.
 
-The on-chain `getContractCode` response hashes to the same SHA-256 as the tracked contract source. This proves byte equality for the returned code, not a separate source-attestation service.
+The historical on-chain `getContractCode` response hashes to the same SHA-256 as the historical tracked contract source. This proves byte equality for the returned code, not a separate source-attestation service, and does not attest the consolidated candidate.
 
-## Checks that passed
+## Historical production checks that passed
 
 | Check | Result |
 |---|---|
@@ -70,9 +70,9 @@ Deployment and lifecycle hashes, result vectors and source commit details are in
 The prior deployment and two live lifecycle proofs remain historical evidence for the previous source. The modified remediation contract has not been deployed or exercised live. This evidence does not establish suitability as a high-impact eligibility decision service; the broader security and semantic checks above remain pending.
 
 
-## Additional raw-provenance adversarial pass — 2026-10-16
+## PR #6 baseline raw-provenance adversarial pass — historical
 
-- Current contract source SHA-256: `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` (UTF-8/LF bytes). Git blob ID: `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`.
+- Starting PR #6 head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` source SHA-256: `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` (UTF-8/LF bytes). Git blob ID: `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`.
 - Confirmed flaw: raw fallback skipped repository and commit identity checks and treated raw URL bytes as revision-bound. A mismatched marker could become `NOT_ESTABLISHED`; raw marker/evidence could become `QUALIFIED` without proving the submitted full SHA is an immutable Git commit.
 - Correction: removed raw-host retrieval and retry from the contract. Only the GitHub API path, after exact `full_name` and full commit-SHA equality checks, can supply decision-bearing marker/evidence. API outage or malformed evidence stays inconclusive.
 - Executable Direct Mode regressions: malformed/mismatched raw marker cannot reject during repository API 403; positive raw marker/evidence cannot qualify during commit API 403; a verified but mismatched commit SHA cannot be overridden by raw bytes; malformed API file data cannot recover from unbound raw bytes. All 17 Direct Mode tests passed, including these regressions.
@@ -82,3 +82,11 @@ The prior deployment and two live lifecycle proofs remain historical evidence fo
 - No deployment, wallet transaction, Vercel environment change, production alias change, fixture marker write, or merge was performed. The production contract and historical transaction/source evidence remain unchanged.
 - The semantic benchmark is **not complete**. Semantic scoring evaluated 0 cases: the existing 40-case suite is post-prompt and its LLM outputs are mocked, and no independent evaluator is configured. Actual target-validator scoring requires live nondeterministic execution and is blocked by the no-broadcast instruction. No semantic accuracy, false qualification/nonqualification, or validator-disagreement rate is claimed.
 - Exact remaining blockers and the wallet-separated live matrix are recorded in `docs/DEPLOYMENT_TEST_PLAN.md`. GitHub Actions [run 38919608432](https://github.com/Bibidee/entrew/actions/runs/38919608432) passed for contract fix commit `274d6935c9e8f14c2e955d5e6fa4d1cc5ab71342`.
+
+## Consolidated release candidate — not deployed
+
+- Candidate contract source SHA-256: `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`; Git blob ID: `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`.
+- The candidate extends the f33 baseline with strict Contents-response path/blob binding, GitHub line-wrapped base64 compatibility, and `TransactionHashVariant.LATEST_FINAL` canonical reads. The deploy script pins this exact SHA-256.
+- Fresh local validation passed: `npm ci`; pinned Python dependency verification; CLI `0.39.1`; network check at `61999`; `npm run check` with contract surface 5/5, policy 15/15, mutations 4/4, Direct Mode 22/22 and production build; Playwright 10/10; and `npm audit` with zero production vulnerabilities. GitHub Actions status is recorded only after the consolidated candidate is committed and pushed. Earlier green CI runs above apply to their named historical commits.
+- No Studionet deployment, wallet transaction, fixture-repository write, Vercel environment change, production redeploy, or merge has been performed for these bytes.
+- The independently authored held-out corpus remains structurally valid but semantically unevaluated (0/40); false qualification, false rejection, inconclusive rate, accuracy, and validator disagreement are not measured.

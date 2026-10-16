@@ -69,9 +69,9 @@ Kill mutations to program-owner checks, frozen rubric, deadline, role checks, re
 
 See `../../docs/TEST_RESULTS.md` and `../../docs/DEPLOYMENT.md` for full hashes, canonical results and receipt details. Never change a pending case to `LIVE-PROVEN` based on Direct Mode or mocked browser fixtures.
 
-## Remediation branch execution status — 2026-10-16
+## Earlier remediation branch execution status — historical
 
-Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`, with contract source commit `d64552d38cbd244b647060f1c045550e2a484237`, and is not deployed. Verified local results for this source:
+Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`. The following results apply to its earlier contract snapshot `d64552d38cbd244b647060f1c045550e2a484237`, not to the consolidated release candidate:
 
 - `npm ci`: passed, 525 packages, 0 install-time vulnerabilities.
 - `py -3.13 -m pip install -r requirements-test.txt`: passed; Python 3.11 does not satisfy `genlayer-test==0.29.2`.
@@ -84,6 +84,10 @@ Branch `audit/full-remediation` is based on `d81ad944a6a89e5713b7f1ca6c224b80e8e
 The added Direct Mode regressions reproduce both raw-fallback trust failures: a malformed/mismatched raw marker cannot reject when repository identity is unverified, and raw marker/evidence cannot qualify when the exact commit is unverified. Malformed API evidence also remains inconclusive when raw bytes are available. The raw fallback is disabled. These results are not `LIVE-PROVEN`. All L01–L16 live checks for the modified source remain pending until authorized deployment and controlled wallet actions are completed. The held-out semantic benchmark remains pending until an independent evaluator can run without broadcasting transactions.
 
 
-## Additional adversarial pass — 2026-10-16
+## PR #6 baseline adversarial pass — historical
 
-Current contract source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`; Git blob ID `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. The raw fallback bypass was confirmed and removed. Four Direct Mode regressions cover raw mismatch rejection without verified repo identity, raw positive qualification without verified commit identity, raw evidence against a mismatched commit SHA, and malformed API evidence with no raw recovery. Full local check passed (Node 5, policy 15, mutations 4, Direct Mode 17, build); Playwright passed 10/10; dependency audit passed with 0 vulnerabilities; CLI `0.39.1` and RPC chain `61999` were confirmed. GitHub Actions [run 38919608432](https://github.com/Bibidee/entrew/actions/runs/38919608432) passed on fix commit `274d6935c9e8f14c2e955d5e6fa4d1cc5ab71342`. This is not submission readiness: held-out semantic scoring (0/40 independently evaluated), changed-source deployment/source attestation, live positive/negative and wallet controls, and production Vercel/browser QA remain blocked. See `../../docs/DEPLOYMENT_TEST_PLAN.md`.
+The starting PR #6 head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had contract source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`; Git blob ID `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. The raw fallback bypass was confirmed and removed. Four Direct Mode regressions cover raw mismatch rejection without verified repo identity, raw positive qualification without verified commit identity, raw evidence against a mismatched commit SHA, and malformed API evidence with no raw recovery. Full local check passed (Node 5, policy 15, mutations 4, Direct Mode 17, build); Playwright passed 10/10; dependency audit passed with 0 vulnerabilities; CLI `0.39.1` and RPC chain `61999` were confirmed. GitHub Actions [run 38919608432](https://github.com/Bibidee/entrew/actions/runs/38919608432) passed on fix commit `274d6935c9e8f14c2e955d5e6fa4d1cc5ab71342`. This is not submission readiness: held-out semantic scoring (0/40 independently evaluated), changed-source deployment/source attestation, live positive/negative and wallet controls, and production Vercel/browser QA remain blocked. See `../../docs/DEPLOYMENT_TEST_PLAN.md`.
+
+## Consolidated release candidate — not deployed
+
+The candidate contract source SHA-256 is `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`; Git blob ID `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`. It adds exact GitHub Contents path/blob binding, accepts only GitHub LF/CRLF base64 wrapping, and uses `TransactionHashVariant.LATEST_FINAL` for browser canonical reads. Fresh local checks passed: contract surface 5/5, policy 15/15, mutations 4/4, Direct Mode 22/22, Playwright 10/10, production build, audit, CLI `0.39.1`, and chain `61999`. Its exact-source deployment, source attestation, live lifecycle evidence, real-wallet browser QA, and held-out semantic evaluation remain pending. GitHub Actions must validate the committed candidate before it is treated as CI evidence.

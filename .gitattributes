@@ -1,0 +1,2 @@
+# The deployed contract is source-attested byte for byte; keep its checkout bytes stable.
+contracts/entrew_registry.py text eol=lf

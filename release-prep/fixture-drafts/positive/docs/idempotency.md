@@ -1,0 +1,1 @@
+POST /charges requires an idempotency key. Repeating the same key and request returns the saved response without creating another charge. Reusing the key with a different request returns an idempotency conflict.

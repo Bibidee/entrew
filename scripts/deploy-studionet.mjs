@@ -9,6 +9,11 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const contractPath = resolve(root, "contracts/entrew_registry.py");
 const source = await readFile(contractPath);
 const expectedHash = createHash("sha256").update(source).digest("hex");
+const reviewedHash = "4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b";
+if (expectedHash !== reviewedHash) {
+  console.error(`Refusing deployment: source SHA-256 ${expectedHash} does not match the reviewed bytes ${reviewedHash}.`);
+  process.exit(1);
+}
 const networkCheck = spawnSync("node", ["scripts/network-check.mjs"], { cwd: root, encoding: "utf8", stdio: "inherit" });
 if (networkCheck.status !== 0) process.exit(networkCheck.status ?? 1);
 const localCli = resolve(root, "node_modules/.bin", process.platform === "win32" ? "genlayer.cmd" : "genlayer");

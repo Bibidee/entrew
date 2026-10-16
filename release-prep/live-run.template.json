@@ -1,0 +1,11 @@
+{
+  "chain_id": 61999,
+  "contract_address": null,
+  "contract_source_sha256": "4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b",
+  "deployment_tx_hash": null,
+  "program_id": null,
+  "program_publish_tx_hash": null,
+  "cases": [],
+  "expected_qualified_entry_ids": [],
+  "unauthorized_action": null
+}

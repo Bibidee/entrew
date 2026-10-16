@@ -3,8 +3,9 @@
 ## Remediation branch — not deployed
 
 - Branch: `audit/full-remediation`, based on verified `origin/main` commit `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`.
-- Remediation contract source commit: `d64552d38cbd244b647060f1c045550e2a484237`.
-- The contract source changed during this audit. Its current Git-stored LF blob SHA-256 is `c8836a1cef11f6e969f0913d5eae9026a77d705bae8168584b6221ffbe2fb898`; this is not the deployed source hash.
+- Earlier PR #6 remediation snapshot: contract commit `d64552d38cbd244b647060f1c045550e2a484237`, source SHA-256 `c8836a1cef11f6e969f0913d5eae9026a77d705bae8168584b6221ffbe2fb898`. It is historical, not the current release candidate.
+- Starting PR #6 head: `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f`, source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`, Git blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. It is also historical after the consolidation fixes.
+- Consolidated release candidate: source SHA-256 `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`, Git blob `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`. The deployment script refuses any source whose SHA-256 differs from this value.
 - The current contract fix has not been deployed. No production Vercel environment value or alias was changed. The live address and transaction below are historical evidence for the previous source version only.
 - Adoption requires a separately authorized Studionet deployment of the exact reviewed source, followed by source-byte comparison, finality/readback checks, and frontend configuration/deployment. The current task's checks are local Direct Mode and browser evidence, not live proof for the modified contract.
 
@@ -17,7 +18,8 @@ The details below are carried forward from the prior release record. They were n
 - Latest production deployment: [READY · dpl_8Y5SPk1HZ5KHPreZzSXLUDGVrS4A](https://vercel.com/bibidees-projects/the-entrew/8Y5SPk1HZ5KHPreZzSXLUDGVrS4A), URL [https://the-entrew-qqznmpl9w-bibidees-projects.vercel.app](https://the-entrew-qqznmpl9w-bibidees-projects.vercel.app).
 - Production environment: `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`, chain ID `61999`, RPC `https://studio.genlayer.com/api`.
 - The environment variable was updated with the Vercel CLI and the frontend redeployed after the address was set.
-- The deployment contains the accessibility fixes merged in PR #4 at `24d805dc3f6c61d07641161fa04fec70e4a55d8a`. The deployed contract source is unchanged from PR #3 at `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5`.
+- Vercel reports source `cli`, `githubCommitSha` `c421e35607e9d036812fc519854fbb0bfd456554` on `fix/genlayer-web-response-status`, and `gitDirty=1`. It cannot attest that the complete deployed artifact equals a clean Git commit.
+- Direct comparison of deployed `app/globals.css` and `components/EntrewApp.tsx` found the PR #4 accessibility changes from `24d805dc3f6c61d07641161fa04fec70e4a55d8a`; that is limited file evidence, not whole-artifact provenance. The deployed contract source remains the historical `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5` source hash recorded below.
 
 ## Contract and source integrity
 

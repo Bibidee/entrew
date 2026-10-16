@@ -7,7 +7,7 @@
 - Every evaluation and revision checks the contract timestamp against the fixed deadline. The cutoff is `now >= deadline`.
 - At most four distinct revision snapshots are allowed. A conclusive snapshot cannot be reviewed twice. An inconclusive snapshot can be retried twice after a ten-minute cooldown.
 - Evidence path, source size, JSON shape, file fingerprint, provenance, criterion vector, and page bounds are checked before state writes.
-- Eligibility decisions use only GitHub API content requested at the supplied full commit SHA, after exact repository and commit identity checks. Raw-host fallback is disabled because it cannot independently bind the returned bytes to that immutable commit. Repository/commit API failures and malformed API responses remain nonconclusive; only an API 404 for the marker after identity checks can prove that marker missing.
+- Eligibility decisions use only GitHub API content requested at the supplied full commit SHA, after exact repository and commit identity checks. Each Contents response must identify the requested path and provide a Git blob SHA that matches the strictly decoded source bytes; GitHub's LF/CRLF base64 line wrapping is accepted, while other whitespace or malformed base64 is rejected. Raw-host fallback is disabled because it cannot independently bind the returned bytes to that immutable commit. Repository/commit API failures and malformed API responses remain nonconclusive; only an API 404 for the marker after identity checks can prove that marker missing.
 - A qualification is appended to the roster only from contract state after every criterion is `MET` and provenance is revision-bound.
 
 ## Untrusted evidence

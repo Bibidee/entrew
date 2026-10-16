@@ -40,7 +40,8 @@ test("paged indexes read at most 25 individual index keys", () => {
 });
 
 test("the frontend requires finalized execution and canonical readback", () => {
-  assert.match(genlayer, /stateStatus:\s*"finalized"/);
+  assert.match(genlayer, /TransactionHashVariant\.LATEST_FINAL/);
+  assert.doesNotMatch(genlayer, /stateStatus/);
   assert.match(genlayer, /status:\s*TransactionStatus\.FINALIZED/);
   assert.match(genlayer, /execution !== ExecutionResult\.FINISHED_WITH_RETURN/);
   assert.match(genlayer, /const canonical = await args\.canonicalReadback\(\)/);

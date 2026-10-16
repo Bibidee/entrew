@@ -293,6 +293,36 @@ def _validate_source_content(content):
     return {"availability": "OK", "content": content}
 
 
+def _decode_github_contents_file(data, expected_path):
+    if not isinstance(data, dict) or data.get("type") != "file" or data.get("encoding") != "base64":
+        return None
+    if data.get("path") != expected_path:
+        return None
+    encoded = data.get("content")
+    reported_sha = data.get("sha")
+    if not isinstance(encoded, str) or not isinstance(reported_sha, str):
+        return None
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", reported_sha):
+        return None
+    # GitHub's Contents API line-wraps base64 output. Accept only CRLF/LF
+    # wrapping, then keep strict base64 validation for every other byte.
+    if "\r" in encoded:
+        if re.search(r"\r(?!\n)", encoded):
+            return None
+        encoded = encoded.replace("\r\n", "\n")
+    if not re.fullmatch(r"[A-Za-z0-9+/=\n]*", encoded):
+        return None
+    try:
+        content = base64.b64decode(encoded.replace("\n", "").encode("ascii"), validate=True)
+    except Exception:
+        return None
+    git_blob_header = b"blob " + str(len(content)).encode("ascii") + b"\x00"
+    actual_sha = hashlib.sha1(git_blob_header + content).hexdigest()
+    if actual_sha != reported_sha.lower():
+        return None
+    return content
+
+
 def _review_snapshot_source(snapshot_json, criteria_json):
     snapshot = _strict_json(snapshot_json)
     criteria = _strict_json(criteria_json)
@@ -322,14 +352,8 @@ def _review_snapshot_source(snapshot_json, criteria_json):
         return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
     if marker_result["availability"] != "OK":
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
-    if marker_result["data"].get("type") != "file" or marker_result["data"].get("encoding") != "base64":
-        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
-    try:
-        marker_content = marker_result["data"].get("content", "")
-        if not isinstance(marker_content, str):
-            raise ValueError("marker content must be text")
-        marker_bytes = base64.b64decode(marker_content.encode("ascii"), validate=True)
-    except Exception:
+    marker_bytes = _decode_github_contents_file(marker_result["data"], MARKER_PATH)
+    if marker_bytes is None:
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
     try:
         marker_text = marker_bytes.decode("utf-8")
@@ -382,12 +406,8 @@ def _review_snapshot_source(snapshot_json, criteria_json):
             path_classifications[path] = "INSUFFICIENT"
             unavailable_issue_codes.append("SOURCE_FILE_UNAVAILABLE")
             continue
-        try:
-            encoded = result["data"].get("content", "")
-            if not isinstance(encoded, str) or result["data"].get("encoding") != "base64":
-                raise ValueError("invalid encoded source response")
-            decoded = base64.b64decode(encoded.encode("ascii"), validate=True)
-        except Exception:
+        decoded = _decode_github_contents_file(result["data"], path)
+        if decoded is None:
             unavailable_paths.add(path)
             path_classifications[path] = "INVALID_RESPONSE"
             unavailable_issue_codes.append("PROVIDER_RESPONSE_INVALID")

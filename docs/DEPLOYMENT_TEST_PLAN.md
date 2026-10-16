@@ -7,22 +7,24 @@ This is a preparation plan for PR #6, branch `audit/full-remediation`. It does n
 - Target network: Studionet, chain ID `61999`.
 - Existing production contract to preserve: `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`.
 - Existing production deployment transaction to preserve: `0x743047241ae5eed661a0d887b8885b18402b42fa3b5bb6f91b02b51c2f656127`.
-- Existing production frontend: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
+- Existing production frontend: [https://the-entrew.vercel.app](https://the-entrew.vercel.app). Its historical deployment metadata is a dirty CLI source tree; it must not be treated as an immutable Git-commit attestation.
 - New remediation deployment address/transaction: not created.
 - Production `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS`: unchanged; no Vercel environment operation was run.
 
 ## Wallet and fixture allocation
 
-Use four distinct, user-authorized Studionet wallets for a single run. Record public addresses and authorization evidence in the run log; never record private keys or seed phrases.
+Use six distinct, user-authorized Studionet wallets for a single run. Record public addresses and authorization evidence in the run log; never record private keys or seed phrases.
 
 | Role | Address | Use |
 |---|---|---|
+| Operator/deployer | pending explicit authorization | Deploy the pinned source; keep separate from all applicants |
 | Organizer | pending explicit authorization | Publish the temporary test program and fixed rubric |
-| Positive applicant | pending explicit authorization | Submit the positive fixture and request assessment |
+| Positive/corrected applicant | pending explicit authorization | Submit the positive fixture, then the corrected revision on the same entry |
 | Negative applicant | pending explicit authorization | Submit a separate fixture that affirmatively fails one criterion |
+| Unavailable-evidence applicant | pending explicit authorization | Isolate inconclusive evidence and retry/cooldown checks |
 | Unauthorized control | pending explicit authorization | Attempt a forbidden mutation against another wallet's entry |
 
-The positive and negative applicants must be different from each other and from the organizer. Use another applicant for retry/recovery cases if available. The operator wallet used to deploy must be authorized separately and should not be one of the applicant wallets.
+All six roles use different wallets. The corrected `r1` and `r2` revisions must use the same positive applicant wallet, distinct immutable commits and fresh nonces. The unauthorized control must differ from the target entry's applicant. These role assignments are preparation only; no wallet has been authorized for this run.
 
 Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.com/Bibidee/entrew-fixtures) only after confirming its current owner permits new writes for this run. Create a unique branch or isolated paths per run, immutable commit SHA per case, and a fresh marker nonce per applicant. The marker must bind the temporary program ID, matching applicant address, exact fixture repository, and nonce. Do not reuse historical `p1`, commits, or marker evidence as proof for the remediation source.
 
@@ -30,11 +32,11 @@ Use the designated fixture repository [Bibidee/entrew-fixtures](https://github.c
 
 | Step | Execution | Evidence to save | State |
 |---|---|---|---|
-| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8`; Git blob ID `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`; contract fix commit `274d6935c9e8f14c2e955d5e6fa4d1cc5ab71342` |
+| Pin PR head and contract source SHA-256/Git blob ID | Automatable, read-only | Git commit, SHA-256, blob ID | Starting PR head `f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f` had source SHA-256 `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` and blob `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`. Consolidated candidate source SHA-256 `4e3239074eec24ccf9328908083a34d012356b698286903e91111a0d9c3e105b`; Git blob `22cf4e27d7d99a9ae9a6fc8a89a6dfa81f185835`. Record the final pushed PR commit before deployment. |
 | Confirm local CLI `0.39.1`, RPC chain ID `61999`, and no `61997` contamination | Automatable, read-only | CLI version and network-check output | Verified for this branch before deployment |
 | Build/deploy exact contract with the separately authorized operator wallet | CLI can submit; actual deployment requires wallet authorization and a broadcast | Deployment transaction, contract address, finality receipt | Blocked pending explicit deployment authorization |
 | Read canonical chain info and deployed source bytes | Automatable after deployment | Chain ID, `getContractCode` SHA-256 vs pinned source, canonical contract metadata | Blocked until deployment |
-| Set the new address in Vercel and redeploy | Vercel CLI can perform the operation; production change requires explicit authorization | Environment/deployment IDs, resulting production URL and config snapshot | Blocked by current no-production-change instruction |
+| Set the new address in Vercel and redeploy | Vercel CLI can perform the operation; production change requires explicit authorization | Environment/deployment IDs, resulting production URL and config snapshot | Blocked by current no-production-change instruction; deploy from a clean checkout with `.vercelignore` applied |
 
 Do not overwrite the existing production address while preparing this test. A separate test project/deployment is preferred; if the existing production project must be changed later, use a reviewed change and preserve its current rollback configuration.
 

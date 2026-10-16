@@ -1,6 +1,7 @@
 """Direct Mode tests against the real contract; requires genlayer-test and pytest."""
 
 import base64
+import hashlib
 import json
 import time
 from contextlib import contextmanager
@@ -48,22 +49,48 @@ def wallet_address(wallet):
     return "0x" + bytes(wallet).hex()
 
 
-def gh_file(text):
-    return {"status": 200, "body": json.dumps({"type": "file", "encoding": "base64", "content": b64(text)})}
+def git_blob_sha(content):
+    return hashlib.sha1(b"blob " + str(len(content)).encode("ascii") + b"\x00" + content).hexdigest()
 
 
-def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200, nonce="a" * 32, marker_encoding="base64"):
+def github_base64(content, line_wrapped=False):
+    encoded = base64.b64encode(content).decode("ascii")
+    if not line_wrapped:
+        return encoded
+    return "\n".join(encoded[index:index + 60] for index in range(0, len(encoded), 60)) + "\n"
+
+
+def gh_file(path, text, returned_path=None, reported_sha=None, line_wrapped=False):
+    content = text.encode("utf-8")
+    body = {
+        "type": "file",
+        "encoding": "base64",
+        "content": github_base64(content, line_wrapped),
+        "path": returned_path if returned_path is not None else path,
+        "sha": reported_sha if reported_sha is not None else git_blob_sha(content),
+    }
+    return {"status": 200, "body": json.dumps(body)}
+
+
+def configure_common_web(direct_vm, sha, program_id, applicant, source_a=None, source_b=None, marker_status=200, nonce="a" * 32, marker_encoding="base64", marker_path=None, marker_sha=None, marker_line_wrapped=False):
     repo = "example/registry"
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/?$", {"status": 200, "body": json.dumps({"full_name": repo})})
     direct_vm.mock_web(r"api\.github\.com/repos/example/registry/commits/" + sha, {"status": 200, "body": json.dumps({"sha": sha})})
     marker = {"program_id": program_id, "wallet": wallet_address(applicant), "repository": repo, "challenge_nonce": nonce}
     if marker_status == 200:
-        marker_body = {"type": "file", "encoding": marker_encoding, "content": b64(json.dumps(marker, separators=(",", ":")))}
+        marker_bytes = json.dumps(marker, separators=(",", ":")).encode("utf-8")
+        marker_body = {
+            "type": "file",
+            "encoding": marker_encoding,
+            "content": github_base64(marker_bytes, marker_line_wrapped),
+            "path": marker_path if marker_path is not None else ".entrew/claim.json",
+            "sha": marker_sha if marker_sha is not None else git_blob_sha(marker_bytes),
+        }
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": 200, "body": json.dumps(marker_body)})
     else:
         direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/\.entrew/claim\.json", {"status": marker_status, "body": "{}"})
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/src/runtime\.py", source_a or gh_file("def health():\n    return 'ok'\n"))
-    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/docs/usage\.md", source_b or gh_file("# Runtime health\nCall /health; a valid request returns ok.\n"))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/src/runtime\.py", source_a or gh_file("src/runtime.py", "def health():\n    return 'ok'\n"))
+    direct_vm.mock_web(r"api\.github\.com/repos/example/registry/contents/docs/usage\.md", source_b or gh_file("docs/usage.md", "# Runtime health\nCall /health; a valid request returns ok.\n"))
 
 
 def submit(contract, direct_vm, direct_bob, program_id, sha, nonce="a" * 32):
@@ -140,7 +167,7 @@ def test_negative_proof_survives_an_unavailable_other_criterion(direct_vm, direc
         sha,
         program_id,
         direct_bob,
-        source_a=gh_file("def health():\\n    return 'failure'\\n"),
+        source_a=gh_file("src/runtime.py", "def health():\\n    return 'failure'\\n"),
         source_b={"status": 503, "body": "unavailable"},
     )
     direct_vm.mock_llm(r".*", json.dumps({"criteria": [
@@ -179,6 +206,81 @@ def test_provider_outage_is_product_inconclusive(direct_vm, direct_deploy, direc
     assert result["provenance"] == "INSUFFICIENT"
     assert json.loads(contract.get_program_qualified_page(program_id, 0, 25)) == []
 
+
+def test_github_line_wrapped_contents_are_revision_bound(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "a" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(
+        direct_vm,
+        sha,
+        program_id,
+        direct_bob,
+        source_a=gh_file("src/runtime.py", "def health():\n    return 'ok'\n", line_wrapped=True),
+        source_b=gh_file("docs/usage.md", "# Runtime health\nCall /health; a valid request returns ok.\n", line_wrapped=True),
+        marker_line_wrapped=True,
+    )
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "QUALIFIED", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["provenance"] == "REVISION_BOUND"
+
+
+
+@pytest.mark.parametrize(
+    ("marker_path", "marker_sha"),
+    [
+        (".entrew/other.json", None),
+        (None, "0" * 40),
+    ],
+)
+def test_marker_metadata_mismatch_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob, marker_path, marker_sha):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "7" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    configure_common_web(direct_vm, sha, program_id, direct_bob, marker_path=marker_path, marker_sha=marker_sha)
+    _positive_llm(direct_vm)
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
+
+
+@pytest.mark.parametrize(
+    ("returned_path", "reported_sha"),
+    [
+        ("src/other.py", None),
+        (None, "0" * 40),
+    ],
+)
+def test_evidence_metadata_mismatch_is_inconclusive(direct_vm, direct_deploy, direct_alice, direct_bob, returned_path, reported_sha):
+    contract = direct_deploy(str(CONTRACT))
+    direct_vm.sender = direct_alice
+    program_id = publish(contract, direct_alice)
+    sha = "9" * 40
+    entry_id = submit(contract, direct_vm, direct_bob, program_id, sha)
+    source_a = gh_file(
+        "src/runtime.py",
+        "def health():\n    return 'ok'\n",
+        returned_path=returned_path,
+        reported_sha=reported_sha,
+    )
+    configure_common_web(direct_vm, sha, program_id, direct_bob, source_a=source_a)
+    direct_vm.mock_llm(r".*", json.dumps({"criteria": [
+        {"index": 0, "status": "MET", "evidence_paths": ["docs/usage.md"], "explanation": "The guide states the required status."},
+    ]}))
+
+    attempt_id = contract.evaluate_revision(entry_id, entry_id + ":r1")
+    result = json.loads(contract.get_review(attempt_id))
+    assert result["outcome"] == "INCONCLUSIVE", {key: result.get(key) for key in ("outcome", "provenance", "issue_code")}
+    assert result["issue_code"] == "PROVIDER_RESPONSE_INVALID"
 
 def test_raw_malformed_marker_cannot_reject_without_verified_repository(direct_vm, direct_deploy, direct_alice, direct_bob):
     contract = direct_deploy(str(CONTRACT))
