@@ -7,7 +7,7 @@
 - Every evaluation and revision checks the contract timestamp against the fixed deadline. The cutoff is `now >= deadline`.
 - At most four distinct revision snapshots are allowed. A conclusive snapshot cannot be reviewed twice. An inconclusive snapshot can be retried twice after a ten-minute cooldown.
 - Evidence path, source size, JSON shape, file fingerprint, provenance, criterion vector, and page bounds are checked before state writes.
-- A raw GitHub marker 404 is ambiguous and cannot prove a missing marker. Only the GitHub API 404 after verified repository and commit identity is classified as a confirmed missing marker. Provider failures and malformed source responses remain nonconclusive; raw fallback does not turn an ambiguous response into a provenance mismatch.
+- Eligibility decisions use only GitHub API content requested at the supplied full commit SHA, after exact repository and commit identity checks. Raw-host fallback is disabled because it cannot independently bind the returned bytes to that immutable commit. Repository/commit API failures and malformed API responses remain nonconclusive; only an API 404 for the marker after identity checks can prove that marker missing.
 - A qualification is appended to the roster only from contract state after every criterion is `MET` and provenance is revision-bound.
 
 ## Untrusted evidence

@@ -13,7 +13,7 @@ PURE_HELPERS = {
     "_pairs_no_duplicates", "_strict_json", "_hash_text", "_canonical_repo",
     "_canonical_path", "_normalize_snapshot", "_snapshot_digest",
     "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body",
-    "_fetch_response", "_fetch_json", "_fetch_text", "_raw_url", "_provider_issue_code", "_validate_source_content",
+    "_fetch_response", "_fetch_json", "_provider_issue_code", "_validate_source_content",
 }
 TREE = ast.parse(CONTRACT.read_text(encoding="utf-8"))
 FUNCTIONS = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in PURE_HELPERS]
@@ -27,8 +27,7 @@ NAMESPACE = {
     "MAX_RESPONSE_CHARS": 20000,
     "MARKER_PATH": ".entrew/claim.json",
     "GITHUB_API": "https://api.github.com",
-    "GITHUB_RAW": "https://raw.githubusercontent.com",
-    "ISSUE_CODES": ("NONE", "REPOSITORY_UNAVAILABLE", "REPOSITORY_IDENTITY_MISMATCH", "COMMIT_UNAVAILABLE", "COMMIT_IDENTITY_MISMATCH", "CLAIM_MARKER_MISSING", "CLAIM_MARKER_UNAVAILABLE", "CLAIM_MARKER_INVALID", "EVIDENCE_BUDGET_EXCEEDED", "VALIDATOR_OUTPUT_INVALID", "EVIDENCE_UNAVAILABLE", "GITHUB_RATE_LIMITED", "GITHUB_403_AMBIGUOUS", "PROVIDER_HTTP_ERROR", "PROVIDER_TRANSPORT_ERROR", "PROVIDER_TRANSIENT_FAILURE", "PROVIDER_REDIRECTED", "PROVIDER_RESPONSE_INVALID", "PROVIDER_RESPONSE_TOO_LARGE", "SOURCE_ENCODING_INVALID", "SOURCE_TOO_LARGE", "SOURCE_BINARY_INVALID", "SOURCE_FILE_UNAVAILABLE"),
+    "ISSUE_CODES": ("NONE", "REPOSITORY_UNAVAILABLE", "REPOSITORY_IDENTITY_MISMATCH", "COMMIT_UNAVAILABLE", "COMMIT_IDENTITY_MISMATCH", "CLAIM_MARKER_MISSING", "CLAIM_MARKER_INVALID", "EVIDENCE_BUDGET_EXCEEDED", "VALIDATOR_OUTPUT_INVALID", "EVIDENCE_UNAVAILABLE", "GITHUB_RATE_LIMITED", "GITHUB_403_AMBIGUOUS", "PROVIDER_HTTP_ERROR", "PROVIDER_TRANSPORT_ERROR", "PROVIDER_TRANSIENT_FAILURE", "PROVIDER_REDIRECTED", "PROVIDER_RESPONSE_INVALID", "PROVIDER_RESPONSE_TOO_LARGE", "SOURCE_ENCODING_INVALID", "SOURCE_TOO_LARGE", "SOURCE_BINARY_INVALID", "SOURCE_FILE_UNAVAILABLE"),
 }
 exec(compile(ast.Module(body=FUNCTIONS, type_ignores=[]), str(CONTRACT), "exec"), NAMESPACE)
 FAKE_WEB = SimpleNamespace(response=None)
@@ -47,10 +46,6 @@ class ContractPolicyTests(unittest.TestCase):
         FAKE_WEB.response = SimpleNamespace(status=404, body=b"{}", url=url)
         self.assertEqual(fetch(url), {"availability": "HTTP_ERROR", "status": 404, "data": {}})
 
-        fetch_text = NAMESPACE["_fetch_text"]
-        raw_url = "https://raw.githubusercontent.com/example/registry/" + "a" * 40 + "/src/runtime.py"
-        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"def health(): return 'ok'", url=raw_url)
-        self.assertEqual(fetch_text(raw_url), {"availability": "OK", "status": 200, "body": "def health(): return 'ok'"})
 
     def test_provider_failures_have_distinct_safe_classifications(self):
         fetch = NAMESPACE["_fetch_response"]
@@ -67,8 +62,10 @@ class ContractPolicyTests(unittest.TestCase):
         self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_REDIRECTED")
 
         FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"\xff", url=url)
-        response = NAMESPACE["_fetch_text"](url)
-        self.assertEqual(issue(response["availability"], response["status"]), "SOURCE_ENCODING_INVALID")
+        response = NAMESPACE["_fetch_json"](url)
+        self.assertEqual(response["availability"], "MALFORMED_JSON")
+        self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_RESPONSE_INVALID")
+        self.assertEqual(issue("SOURCE_ENCODING_INVALID"), "SOURCE_ENCODING_INVALID")
 
         FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"x" * 20001, url=url)
         response = fetch(url)

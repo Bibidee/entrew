@@ -68,3 +68,17 @@ Deployment and lifecycle hashes, result vectors and source commit details are in
 - The 40-case fixture set was not held out before prompt tuning. No semantic accuracy, false-qualification, false-nonqualification or validator-disagreement rate is claimed.
 
 The prior deployment and two live lifecycle proofs remain historical evidence for the previous source. The modified remediation contract has not been deployed or exercised live. This evidence does not establish suitability as a high-impact eligibility decision service; the broader security and semantic checks above remain pending.
+
+
+## Additional raw-provenance adversarial pass — 2026-10-16
+
+- Current contract source SHA-256: `1429e3134d49ff20b00f233c98f3783a8580dc5b7cc280de8f7e70da13e010e8` (UTF-8/LF bytes). Git blob ID: `f6f7c7e9c72814cb82497f3b7a3c6639de7503d3`.
+- Confirmed flaw: raw fallback skipped repository and commit identity checks and treated raw URL bytes as revision-bound. A mismatched marker could become `NOT_ESTABLISHED`; raw marker/evidence could become `QUALIFIED` without proving the submitted full SHA is an immutable Git commit.
+- Correction: removed raw-host retrieval and retry from the contract. Only the GitHub API path, after exact `full_name` and full commit-SHA equality checks, can supply decision-bearing marker/evidence. API outage or malformed evidence stays inconclusive.
+- Executable Direct Mode regressions: malformed/mismatched raw marker cannot reject during repository API 403; positive raw marker/evidence cannot qualify during commit API 403; a verified but mismatched commit SHA cannot be overridden by raw bytes; malformed API file data cannot recover from unbound raw bytes. All 17 Direct Mode tests passed, including these regressions.
+- Latest `npm run check`: passed TypeScript, ESLint, Node 5/5, Python policy 15/15, mutations 4/4, Direct Mode 17/17, and production build.
+- Latest `npm run test:e2e`: passed 10/10 local Chromium desktop/mobile tests; route rendering, six viewport widths, automated axe checks, and wallet-modal behavior passed. This is local, unconfigured-app browser evidence only.
+- Latest `npm run audit`: 0 vulnerabilities. `npm run cli:local-version`: `0.39.1`. `npm run network:check`: no alternate-network contamination; RPC returned chain `61999` (`0xf22f`) at `https://studio.genlayer.com/api`.
+- No deployment, wallet transaction, Vercel environment change, production alias change, fixture marker write, or merge was performed. The production contract and historical transaction/source evidence remain unchanged.
+- The semantic benchmark is **not complete**. Semantic scoring evaluated 0 cases: the existing 40-case suite is post-prompt and its LLM outputs are mocked, and no independent evaluator is configured. Actual target-validator scoring requires live nondeterministic execution and is blocked by the no-broadcast instruction. No semantic accuracy, false qualification/nonqualification, or validator-disagreement rate is claimed.
+- Exact remaining blockers and the wallet-separated live matrix are recorded in `docs/DEPLOYMENT_TEST_PLAN.md`. CI on this new source is pending push.

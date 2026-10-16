@@ -30,7 +30,6 @@ ISSUE_CODES = (
     "COMMIT_UNAVAILABLE",
     "COMMIT_IDENTITY_MISMATCH",
     "CLAIM_MARKER_MISSING",
-    "CLAIM_MARKER_UNAVAILABLE",
     "CLAIM_MARKER_INVALID",
     "EVIDENCE_BUDGET_EXCEEDED",
     "VALIDATOR_OUTPUT_INVALID",
@@ -49,7 +48,6 @@ ISSUE_CODES = (
     "SOURCE_FILE_UNAVAILABLE",
 )
 GITHUB_API = "https://api.github.com"
-GITHUB_RAW = "https://raw.githubusercontent.com"
 GITHUB_HEADERS = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -285,15 +283,6 @@ def _provider_issue_code(availability, status=0):
     return "PROVIDER_HTTP_ERROR"
 
 
-def _fetch_text(url):
-    response = _fetch_response(url)
-    if response["availability"] == "INVALID_ENCODING":
-        response["availability"] = "SOURCE_ENCODING_INVALID"
-    if response["availability"] != "OK":
-        return {"availability": response["availability"], "status": response["status"], "body": ""}
-    return response
-
-
 def _validate_source_content(content):
     if not isinstance(content, str):
         return {"availability": "INVALID_RESPONSE", "content": ""}
@@ -304,12 +293,7 @@ def _validate_source_content(content):
     return {"availability": "OK", "content": content}
 
 
-def _raw_url(owner, repo, commit_sha, path):
-    # owner/repo/path have been canonicalized and the SHA has been validated.
-    return GITHUB_RAW + "/" + owner + "/" + repo + "/" + commit_sha + "/" + path
-
-
-def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
+def _review_snapshot_source(snapshot_json, criteria_json):
     snapshot = _strict_json(snapshot_json)
     criteria = _strict_json(criteria_json)
     owner = snapshot["owner"]
@@ -317,49 +301,40 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
     full_repo = owner + "/" + repo_name
     commit_sha = snapshot["commit_sha"]
 
-    if not use_raw:
-        repo_result = _fetch_json(_api_url(owner, repo_name, ""))
-        if repo_result["availability"] != "OK":
-            issue = "REPOSITORY_UNAVAILABLE" if repo_result["availability"] == "HTTP_ERROR" and repo_result["status"] == 404 else _provider_issue_code(repo_result["availability"], repo_result["status"])
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
-        if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
-            return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
+    # Eligibility evidence is accepted only through the API after the exact
+    # repository and full commit SHA have both been independently verified.
+    repo_result = _fetch_json(_api_url(owner, repo_name, ""))
+    if repo_result["availability"] != "OK":
+        issue = "REPOSITORY_UNAVAILABLE" if repo_result["availability"] == "HTTP_ERROR" and repo_result["status"] == 404 else _provider_issue_code(repo_result["availability"], repo_result["status"])
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
+    if str(repo_result["data"].get("full_name", "")).lower() != full_repo:
+        return _unverifiable(criteria, "MISMATCH", "REPOSITORY_IDENTITY_MISMATCH", full_repo, commit_sha)
 
-        commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
-        if commit_result["availability"] != "OK":
-            issue = "COMMIT_UNAVAILABLE" if commit_result["availability"] == "HTTP_ERROR" and commit_result["status"] == 404 else _provider_issue_code(commit_result["availability"], commit_result["status"])
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
-        if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
-            return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
+    commit_result = _fetch_json(_api_url(owner, repo_name, "commits/" + commit_sha))
+    if commit_result["availability"] != "OK":
+        issue = "COMMIT_UNAVAILABLE" if commit_result["availability"] == "HTTP_ERROR" and commit_result["status"] == 404 else _provider_issue_code(commit_result["availability"], commit_result["status"])
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", issue, full_repo, commit_sha)
+    if str(commit_result["data"].get("sha", "")).lower() != commit_sha:
+        return _unverifiable(criteria, "MISMATCH", "COMMIT_IDENTITY_MISMATCH", full_repo, commit_sha)
 
-    if use_raw:
-        marker_result = _fetch_text(_raw_url(owner, repo_name, commit_sha, MARKER_PATH))
-        if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
-            # raw.githubusercontent.com does not prove repository or commit identity.
-            # Its 404 is ambiguous, so it must not become a conclusive rejection.
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "CLAIM_MARKER_UNAVAILABLE", full_repo, commit_sha)
-        if marker_result["availability"] != "OK":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
-        marker_text = marker_result["body"]
-    else:
-        marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
-        if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
-            return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
-        if marker_result["availability"] != "OK":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
-        if marker_result["data"].get("type") != "file" or marker_result["data"].get("encoding") != "base64":
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
-        try:
-            marker_content = marker_result["data"].get("content", "")
-            if not isinstance(marker_content, str):
-                raise ValueError("marker content must be text")
-            marker_bytes = base64.b64decode(marker_content.encode("ascii"), validate=True)
-        except Exception:
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
-        try:
-            marker_text = marker_bytes.decode("utf-8")
-        except UnicodeDecodeError:
-            return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "SOURCE_ENCODING_INVALID", full_repo, commit_sha)
+    marker_result = _fetch_json(_api_url(owner, repo_name, "contents/" + MARKER_PATH + "?ref=" + commit_sha))
+    if marker_result["availability"] == "HTTP_ERROR" and marker_result["status"] == 404:
+        return _unverifiable(criteria, "MISMATCH", "CLAIM_MARKER_MISSING", full_repo, commit_sha)
+    if marker_result["availability"] != "OK":
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_result["availability"], marker_result["status"]), full_repo, commit_sha)
+    if marker_result["data"].get("type") != "file" or marker_result["data"].get("encoding") != "base64":
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    try:
+        marker_content = marker_result["data"].get("content", "")
+        if not isinstance(marker_content, str):
+            raise ValueError("marker content must be text")
+        marker_bytes = base64.b64decode(marker_content.encode("ascii"), validate=True)
+    except Exception:
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
+    try:
+        marker_text = marker_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "SOURCE_ENCODING_INVALID", full_repo, commit_sha)
 
     try:
         marker = _strict_json(marker_text, 2000)
@@ -387,28 +362,6 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
     unavailable_issue_codes = []
     total_chars = 0
     for path in snapshot["evidence_paths"]:
-        if use_raw:
-            result = _fetch_text(_raw_url(owner, repo_name, commit_sha, path))
-            if result["availability"] != "OK":
-                unavailable_paths.add(path)
-                # A raw-host 404 does not prove that this path is absent from
-                # the claimed repository/commit. Keep it inconclusive.
-                path_classifications[path] = "PROVIDER_UNAVAILABLE" if result["availability"] not in ("SOURCE_ENCODING_INVALID", "RESPONSE_TOO_LARGE", "INVALID_RESPONSE") else "INVALID_RESPONSE"
-                unavailable_issue_codes.append(_provider_issue_code(result["availability"], result["status"]))
-                continue
-            checked = _validate_source_content(result["body"])
-            if checked["availability"] != "OK":
-                unavailable_paths.add(path)
-                path_classifications[path] = "INVALID_RESPONSE"
-                unavailable_issue_codes.append(_provider_issue_code(checked["availability"], result["status"]))
-                continue
-            content = checked["content"]
-            total_chars += len(content)
-            digest = _hash_text(content)
-            evidence[path] = {"content": content, "sha256": digest}
-            path_classifications[path] = "REVISION_BOUND"
-            continue
-
         result = _fetch_json(_api_url(owner, repo_name, "contents/" + path + "?ref=" + commit_sha))
         if result["availability"] != "OK":
             unavailable_paths.add(path)
@@ -520,14 +473,8 @@ def _review_snapshot_source(snapshot_json, criteria_json, use_raw=False):
 
 
 def _review_snapshot(snapshot_json, criteria_json):
-    result = _review_snapshot_source(snapshot_json, criteria_json)
-    retry_raw = result["provenance"] == "PROVIDER_UNAVAILABLE" or any(
-        item.get("classification") == "PROVIDER_UNAVAILABLE" for item in result.get("files", [])
-    )
-    if not retry_raw:
-        return result
-    raw_result = _review_snapshot_source(snapshot_json, criteria_json, use_raw=True)
-    return raw_result if raw_result["provenance"] != "PROVIDER_UNAVAILABLE" else result
+    # No host-only fallback can establish repository, commit, and bytes binding.
+    return _review_snapshot_source(snapshot_json, criteria_json)
 
 
 def _api_url(owner, repo, suffix):
