@@ -62,6 +62,18 @@ test("configured registry reads the corrected contract's finalized program", asy
   await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: configuredProgramTitle }));
 });
 
+test("configured application form rejects invalid evidence paths before mapping", async ({ page }) => {
+  test.skip(!configuredContract, "Set NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS to run this isolated live-contract check.");
+  test.setTimeout(180_000);
+  await page.goto("/apply?program=p1");
+  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: /Build a revision/i }));
+  await page.getByLabel("Evidence paths, one per line (maximum three)").fill("src/handler.py\n../secret.txt\nhttps://example.com/file");
+  await expect(page.getByText(/Remove the invalid path/)).toBeVisible();
+  await expect(page.getByLabel("Evidence paths, one per line (maximum three)")).toHaveAttribute("aria-invalid", "true");
+  expect(await page.getByLabel("Evidence paths for criterion 1").locator("option").allTextContents()).toEqual(["src/handler.py"]);
+  expect(await page.getByLabel("Evidence paths for criterion 2").locator("option").allTextContents()).toEqual(["src/handler.py"]);
+});
+
 test("all routes fit every requested viewport", async ({ page }) => {
   for (const width of [320, 375, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -89,21 +101,29 @@ test("every route has no automated accessibility violations", async ({ page }) =
 
 test("MetaMask and Rabby can be selected independently and switch to exact Studionet", async ({ page }) => {
   await page.addInitScript(() => {
-    let chain = "0x1";
+    let chain = window.sessionStorage.getItem("mock-wallet-chain") || "0x1";
     const makeProvider = (kind: "metamask" | "rabby") => ({
       isMetaMask: kind === "metamask",
       isRabby: kind === "rabby",
       request: async ({ method }: { method: string }) => {
         if (method === "eth_requestAccounts" || method === "eth_accounts") return [kind === "metamask" ? "0x1111111111111111111111111111111111111111" : "0x2222222222222222222222222222222222222222"];
         if (method === "eth_chainId") return chain;
-        if (method === "wallet_switchEthereumChain") { chain = "0xf22f"; return null; }
+        if (method === "wallet_switchEthereumChain") { chain = "0xf22f"; window.sessionStorage.setItem("mock-wallet-chain", chain); return null; }
         if (method === "wallet_addEthereumChain") return null;
         throw new Error(`Unexpected test provider request: ${method}`);
       },
       on: () => undefined,
       removeListener: () => undefined,
     });
-    Object.defineProperty(window, "ethereum", { configurable: true, value: { providers: [makeProvider("metamask"), makeProvider("rabby")] } });
+    const metaMask = makeProvider("metamask");
+    const rabbyFallback = makeProvider("rabby");
+    const rabbyAnnouncement = makeProvider("rabby");
+    window.addEventListener("eip6963:requestProvider", () => {
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", {
+        detail: { info: { uuid: "rabby-announcement", name: "Rabby Wallet" }, provider: rabbyAnnouncement },
+      }));
+    });
+    Object.defineProperty(window, "ethereum", { configurable: true, value: { providers: [metaMask, rabbyFallback] } });
   });
   await page.goto("/");
   const connectButton = page.getByRole("button", { name: "Connect wallet" });
@@ -112,6 +132,8 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
   await expect(dialog).toBeVisible();
   const closeButton = page.getByRole("button", { name: "Close wallet selection" });
   const walletChoices = dialog.getByRole("button", { name: /MetaMask|Rabby/ });
+  await expect(walletChoices).toHaveCount(2);
+  expect((await walletChoices.allTextContents()).map((text) => text.replace("◇", "").trim()).sort()).toEqual(["MetaMask", "Rabby"]);
   await expect(closeButton).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(walletChoices.last()).toBeFocused();
@@ -124,7 +146,11 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
   await expect(page.getByRole("button", { name: "Switch network" })).toBeVisible();
   await page.getByRole("button", { name: "Switch network" }).click();
   await expect(page.locator(".wallet-pill")).toHaveAttribute("title", /Rabby · 0x2222/);
+  await page.reload();
+  await expect(page.locator(".wallet-pill")).toHaveAttribute("title", /Rabby · 0x2222/);
   await expect(page.getByRole("button", { name: "Disconnect" })).toBeVisible();
   await page.getByRole("button", { name: "Disconnect" }).click();
+  await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+  await page.reload();
   await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
 });

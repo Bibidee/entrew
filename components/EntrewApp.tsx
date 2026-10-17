@@ -7,7 +7,7 @@ import { decodeJson, readContract, writeAndVerify, type WriteResult } from "@/li
 import { formatDate, sha256, shortAddress, shortHash, stableStringify } from "@/lib/format";
 import { NETWORK } from "@/lib/network";
 import { reconcileActivity } from "@/lib/recovery";
-import { connectProvider, discoverWallets, providerChainId, switchToStudionet, type WalletOption } from "@/lib/wallet";
+import { connectedProviderAccount, connectProvider, discoverWallets, providerChainId, switchToStudionet, type WalletOption } from "@/lib/wallet";
 import { normalizeEvidencePath, normalizeRepo, validateProgram, validateSnapshot } from "@/lib/validation";
 import { readConsistentPage } from "@/lib/pagination";
 import type { Criterion, Entry, Program, ReviewAttempt, Revision, WalletState } from "@/lib/types";
@@ -21,6 +21,7 @@ const navigation: Array<{ label: string; href: string; page: PageKey }> = [
   { label: "Workspace", href: "/workspace", page: "workspace" },
   { label: "Activity", href: "/activity", page: "activity" },
 ];
+const WALLET_OPTION_STORAGE_KEY = "entrew.wallet-option";
 
 function asNumber(value: unknown): number {
   const result = Number(value);
@@ -195,6 +196,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       connectionVersion.current += 1;
       if (!Array.isArray(accounts) || typeof accounts[0] !== "string") {
         setWallet(null);
+        window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
         setNotice("ENTREW disconnected from this tab. Wallet permission may remain enabled in the provider.");
         return;
       }
@@ -209,6 +211,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     const disconnected = () => {
       connectionVersion.current += 1;
       setWallet(null);
+      window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
     };
     provider.on?.("accountsChanged", accountChanged);
     provider.on?.("chainChanged", chainChanged);
@@ -219,6 +222,25 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       provider.removeListener?.("disconnect", disconnected);
     };
   }, [wallet, wallet?.provider]);
+
+  useEffect(() => {
+    const preferredOptionId = window.sessionStorage.getItem(WALLET_OPTION_STORAGE_KEY);
+    if (!preferredOptionId) return;
+    const version = ++connectionVersion.current;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const option = (await discoverWallets()).find((candidate) => candidate.id === preferredOptionId);
+        if (!option) throw new Error("The previously selected wallet is unavailable.");
+        const [address, chainId] = await Promise.all([connectedProviderAccount(option.provider), providerChainId(option.provider)]);
+        if (!address) throw new Error("The previously selected wallet has no available account.");
+        if (!cancelled && connectionVersion.current === version) setWallet({ address, provider: option.provider, name: option.name, chainId });
+      } catch {
+        window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const version = ++loadVersion.current;
@@ -381,6 +403,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       const chainId = await providerChainId(option.provider);
       if (connectionVersion.current !== version) return;
       setWallet({ address, provider: option.provider, name: option.name, chainId });
+      window.sessionStorage.setItem(WALLET_OPTION_STORAGE_KEY, option.id);
       setWalletModal(false); setWalletOptions([]);
       window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".header-actions .connect")?.focus());
       setNotice(chainId === NETWORK.id ? "Connected to Studionet. Public reads remain on the configured finalized RPC." : "Wallet connected on another network. Switch to Studionet before signing.");
@@ -418,6 +441,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   function disconnectApp() {
     connectionVersion.current += 1;
     setWallet(null);
+    window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
     setNotice("Disconnected from ENTREW in this tab. The wallet provider may still have account permission.");
   }
 
@@ -688,7 +712,23 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   function evidenceComposer(isRevision: boolean) {
     if (!program && !isRevision) return null;
     const criterionRows = program?.criteria || [];
-    const paths = pathsInput.split(/\r?\n/).map((path) => path.trim()).filter(Boolean);
+    const rawPaths = pathsInput.split(/\r?\n/).map((path) => path.trim()).filter(Boolean);
+    const invalidPath = rawPaths.find((path) => {
+      try {
+        normalizeEvidencePath(path);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    const paths = rawPaths.filter((path) => {
+      try {
+        normalizeEvidencePath(path);
+        return true;
+      } catch {
+        return false;
+      }
+    });
     const markerOwner = isRevision ? entry?.owner || "" : ownerInput.trim().toLowerCase();
     const markerRepo = isRevision ? entry?.repo || "" : repoInput.trim().toLowerCase();
     const markerProgram = program?.program_id || entry?.program_id || "";
@@ -697,7 +737,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       <div className="panel-title"><div><div className="eyebrow">Evidence Studio</div><h2 style={{ marginTop: 7 }}>{isRevision ? "Pin a corrected revision" : "Bind your public work"}</h2><p>All files and the claim marker are resolved at one immutable commit.</p></div><span className="tag">No file upload</span></div>
       {!isRevision && <div className="form-grid"><div className="field"><label htmlFor="github-owner">GitHub owner</label><input id="github-owner" className="control" value={ownerInput} onChange={(event) => setOwnerInput(event.target.value)} placeholder="organization" autoCapitalize="none" required /></div><div className="field"><label htmlFor="github-repo">Repository</label><input id="github-repo" className="control" value={repoInput} onChange={(event) => setRepoInput(event.target.value)} placeholder="project-name" autoCapitalize="none" required /></div></div>}
       <div className="field"><label htmlFor="commit-sha">Full commit SHA</label><input id="commit-sha" className="control hash" value={shaInput} onChange={(event) => setShaInput(event.target.value)} placeholder="40 hexadecimal characters" autoCapitalize="none" required /><small>Use the exact commit that contains the marker and every evidence file.</small></div>
-      <div className="field"><label htmlFor="evidence-paths">Evidence paths, one per line (maximum three)</label><textarea id="evidence-paths" className="control hash" value={pathsInput} onChange={(event) => setPathsInput(event.target.value)} placeholder={'src/parser.ts\ndocs/usage.md'} /><small>Relative, allowlisted GitHub paths only. No directory traversal, URLs, or pasted source.</small></div>
+      <div className="field"><label htmlFor="evidence-paths">Evidence paths, one per line (maximum three)</label><textarea id="evidence-paths" className="control hash" aria-invalid={Boolean(invalidPath)} aria-describedby={invalidPath ? "evidence-paths-error" : undefined} value={pathsInput} onChange={(event) => setPathsInput(event.target.value)} placeholder={'src/parser.ts\ndocs/usage.md'} /><small>Relative, allowlisted GitHub paths only. No directory traversal, URLs, or pasted source.</small>{invalidPath && <p id="evidence-paths-error" className="error-message" role="alert">Remove the invalid path “{invalidPath}” before mapping evidence.</p>}</div>
       <div className="field"><span className="field-label">Map paths to every criterion</span><div>{criterionRows.map((criterion, index) => <div className="mapping-row" key={criterion.key}><div><strong>C{index + 1} · {criterion.key}</strong><p>{criterion.requirement}</p></div><select className="control" aria-label={`Evidence paths for criterion ${index + 1}`} multiple value={evidenceMapping[String(index)] || []} onChange={(event) => setEvidencePaths(index, [...event.currentTarget.selectedOptions].map((option) => option.value))} size={Math.max(2, Math.min(4, paths.length + 1))}>{paths.map((path) => <option key={path} value={path}>{path}</option>)}</select></div>)}</div><small>Select one or more listed paths for each criterion.</small></div>
       <div className="panel" style={{ padding: 17, background: "#fbfbfd" }}><div className="panel-title"><div><div className="eyebrow">Revision-locked claim</div><h3 style={{ marginTop: 6 }}>Prepare the marker before filing</h3></div><button type="button" className="button secondary" onClick={generateNonce}>Generate nonce</button></div>
         <p className="helper">Commit this exact JSON at <span className="hash">.entrew/claim.json</span>, then paste the resulting commit SHA above. The marker binds program, wallet, repository, and a unique nonce; it cannot include its own SHA. Generate a new nonce for every corrected revision.</p>
