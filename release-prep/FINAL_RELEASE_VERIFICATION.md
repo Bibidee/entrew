@@ -45,3 +45,6 @@ Unavailable-evidence transaction `0xdfe0c62321343d67a2a1703c0b4142691a97f0b6a1dd
 ## Bounded retest conclusion
 
 The retest preserved the historical `MAJORITY_DISAGREE` and first `GITHUB_403_AMBIGUOUS` receipts without rebroadcasting them. A fresh minimal negative fixture completed correctly. A fresh minimal missing-file fixture, verified locally as repository/marker/documentation HTTP `200` with only the mapped implementation file HTTP `404`, still finalized as `GITHUB_403_AMBIGUOUS`. Local reachability is not evidence of validator reachability. No further semantic write was sent.
+## Provider investigation and escalation
+
+The supported Studio trace RPC (`gen_dbg_traceTransaction`) is unavailable for the failed transaction. The contract exposes no response headers or retained error bodies, and canonical `a7` contains neither a marker hash nor fingerprints. The only supported diagnosis is a pre-evidence validator-side GitHub `403`; the endpoint and cause remain unidentifiable. A tree-first missing-file optimization could remove the final Contents request after marker verification, but cannot solve this incident because marker verification never completed. It is therefore not a justified deployed-contract change. A maintainer escalation is prepared in `release-prep/GENLAYER_GITHUB_403_ESCALATION.md`.
