@@ -2,7 +2,7 @@
 
 ENTREW is a backendless public review registry for developer programs. Organizers publish immutable two- or three-criterion requirements and deadlines. Applicants submit a public GitHub repository, full commit SHA, bounded evidence paths, and a same-revision `.entrew/claim.json` marker. GenLayer validators independently retrieve and assess the bounded evidence. A contract outcome is only visible after finalized successful execution and canonical state readback.
 
-The historical production frontend remains live at [the-entrew.vercel.app](https://the-entrew.vercel.app) on its preserved contract address. The current remediation source is separately deployed and source-attested on Studionet at `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` (SHA-256 `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44`). It has conclusive initial-negative, corrected-qualified, and independent-qualified lifecycle evidence. Production configuration has not changed. The current release decision and known live-matrix limitations are in [the final release verification](release-prep/FINAL_RELEASE_VERIFICATION.md).
+The production frontend at [the-entrew.vercel.app](https://the-entrew.vercel.app) uses the source-attested Studionet remediation contract `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` (SHA-256 `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44`). It has conclusive initial-negative, corrected-qualified, independent-qualified, and fresh-negative lifecycle evidence. The historical production contract and its evidence remain preserved. The current release decision and known live-matrix limitation are in [the final release verification](release-prep/FINAL_RELEASE_VERIFICATION.md).
 
 ## Source layout
 
@@ -39,6 +39,6 @@ The Direct Mode test dependency requires Python 3.12 or newer. On Windows, use t
 
 ## Configuration
 
-The preserved production environment uses `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`. The separately verified remediation contract is `0xf365B36251a734B19d5E56A09AE54bD503fbcC31`; use it only in an isolated local or preview environment until production release is approved. Both use chain ID `61999` and RPC `https://studio.genlayer.com/api`. The contract address is public configuration, not a secret.
+Production uses `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf365B36251a734B19d5E56A09AE54bD503fbcC31`, chain ID `61999`, and RPC `https://studio.genlayer.com/api`. The preceding production address `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca` remains historical rollback evidence. The contract address is public configuration, not a secret.
 
 See [deployment evidence](docs/DEPLOYMENT.md), [security limits](docs/SECURITY.md), and [test results](docs/TEST_RESULTS.md).
