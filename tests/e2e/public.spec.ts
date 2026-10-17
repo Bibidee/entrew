@@ -56,7 +56,7 @@ test("configured registry reads the corrected contract's finalized program", asy
   test.setTimeout(180_000);
   await page.goto("/");
   await waitForFinalizedRead(page, page.getByText("1 published in finalized contract state"));
-  const program = page.getByRole("link", { name: configuredProgramTitle, exact: true });
+  const program = page.getByRole("link", { name: configuredProgramTitle });
   await expect(program).toBeVisible();
   await program.click();
   await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: configuredProgramTitle }));

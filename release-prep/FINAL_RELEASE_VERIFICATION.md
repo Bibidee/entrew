@@ -36,3 +36,9 @@ The local full quality suite previously passed at `5cad64f`: typecheck, lint, co
 ## Production and approval status
 
 No Vercel production variable, deployment, alias, or PR merge was changed. The production cutover remains unapproved. A new bounded lifecycle attempt should occur only after the validator-side GitHub provider condition is independently stable; it must use fresh immutable fixtures and preserve the existing failed attempts.
+
+## Receipt attribution
+
+Negative transaction `0xecc99a198d2f0f77a9ae9df552d17df9ca8c916b5a4bb3a39bf21a56670b0152` finalized `MAJORITY_DISAGREE`: three validators voted disagree, two became idle after quorum, and the leader execution succeeded. The exposed receipt has no independent review payload or provider error for the disagreeing validators, so it cannot distinguish semantic disagreement from a provider-dependent divergence. It is classified as unidentifiable from available logs.
+
+Unavailable-evidence transaction `0xdfe0c62321343d67a2a1703c0b4142691a97f0b6a1dd234c02bc22f781926b43` finalized `MAJORITY_AGREE`. Canonical `a5` for `e7:r1` is `INCONCLUSIVE`, `PROVIDER_UNAVAILABLE`, `GITHUB_403_AMBIGUOUS`; this is an external validator-side GitHub limitation, not applicant failure.
