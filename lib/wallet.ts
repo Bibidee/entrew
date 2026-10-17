@@ -46,6 +46,19 @@ export async function discoverWallets(timeoutMs = 250): Promise<WalletOption[]> 
 
 export async function connectProvider(provider: Eip1193Provider): Promise<`0x${string}`> {
   const accounts = await provider.request({ method: "eth_requestAccounts" });
+  return firstAccount(accounts);
+}
+
+export async function connectedProviderAccount(provider: Eip1193Provider): Promise<`0x${string}` | null> {
+  const accounts = await provider.request({ method: "eth_accounts" });
+  try {
+    return firstAccount(accounts);
+  } catch {
+    return null;
+  }
+}
+
+function firstAccount(accounts: unknown): `0x${string}` {
   if (!Array.isArray(accounts) || typeof accounts[0] !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0])) {
     throw new Error("The selected wallet did not return a valid account.");
   }

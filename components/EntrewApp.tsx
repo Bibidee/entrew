@@ -7,7 +7,7 @@ import { decodeJson, readContract, writeAndVerify, type WriteResult } from "@/li
 import { formatDate, sha256, shortAddress, shortHash, stableStringify } from "@/lib/format";
 import { NETWORK } from "@/lib/network";
 import { reconcileActivity } from "@/lib/recovery";
-import { connectProvider, discoverWallets, providerChainId, switchToStudionet, type WalletOption } from "@/lib/wallet";
+import { connectedProviderAccount, connectProvider, discoverWallets, providerChainId, switchToStudionet, type WalletOption } from "@/lib/wallet";
 import { normalizeEvidencePath, normalizeRepo, validateProgram, validateSnapshot } from "@/lib/validation";
 import { readConsistentPage } from "@/lib/pagination";
 import type { Criterion, Entry, Program, ReviewAttempt, Revision, WalletState } from "@/lib/types";
@@ -21,6 +21,7 @@ const navigation: Array<{ label: string; href: string; page: PageKey }> = [
   { label: "Workspace", href: "/workspace", page: "workspace" },
   { label: "Activity", href: "/activity", page: "activity" },
 ];
+const WALLET_OPTION_STORAGE_KEY = "entrew.wallet-option";
 
 function asNumber(value: unknown): number {
   const result = Number(value);
@@ -195,6 +196,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       connectionVersion.current += 1;
       if (!Array.isArray(accounts) || typeof accounts[0] !== "string") {
         setWallet(null);
+        window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
         setNotice("ENTREW disconnected from this tab. Wallet permission may remain enabled in the provider.");
         return;
       }
@@ -209,6 +211,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     const disconnected = () => {
       connectionVersion.current += 1;
       setWallet(null);
+      window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
     };
     provider.on?.("accountsChanged", accountChanged);
     provider.on?.("chainChanged", chainChanged);
@@ -219,6 +222,25 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       provider.removeListener?.("disconnect", disconnected);
     };
   }, [wallet, wallet?.provider]);
+
+  useEffect(() => {
+    const preferredOptionId = window.sessionStorage.getItem(WALLET_OPTION_STORAGE_KEY);
+    if (!preferredOptionId) return;
+    const version = ++connectionVersion.current;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const option = (await discoverWallets()).find((candidate) => candidate.id === preferredOptionId);
+        if (!option) throw new Error("The previously selected wallet is unavailable.");
+        const [address, chainId] = await Promise.all([connectedProviderAccount(option.provider), providerChainId(option.provider)]);
+        if (!address) throw new Error("The previously selected wallet has no available account.");
+        if (!cancelled && connectionVersion.current === version) setWallet({ address, provider: option.provider, name: option.name, chainId });
+      } catch {
+        window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const version = ++loadVersion.current;
@@ -381,6 +403,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       const chainId = await providerChainId(option.provider);
       if (connectionVersion.current !== version) return;
       setWallet({ address, provider: option.provider, name: option.name, chainId });
+      window.sessionStorage.setItem(WALLET_OPTION_STORAGE_KEY, option.id);
       setWalletModal(false); setWalletOptions([]);
       window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".header-actions .connect")?.focus());
       setNotice(chainId === NETWORK.id ? "Connected to Studionet. Public reads remain on the configured finalized RPC." : "Wallet connected on another network. Switch to Studionet before signing.");
@@ -418,6 +441,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   function disconnectApp() {
     connectionVersion.current += 1;
     setWallet(null);
+    window.sessionStorage.removeItem(WALLET_OPTION_STORAGE_KEY);
     setNotice("Disconnected from ENTREW in this tab. The wallet provider may still have account permission.");
   }
 

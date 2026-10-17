@@ -101,14 +101,14 @@ test("every route has no automated accessibility violations", async ({ page }) =
 
 test("MetaMask and Rabby can be selected independently and switch to exact Studionet", async ({ page }) => {
   await page.addInitScript(() => {
-    let chain = "0x1";
+    let chain = window.sessionStorage.getItem("mock-wallet-chain") || "0x1";
     const makeProvider = (kind: "metamask" | "rabby") => ({
       isMetaMask: kind === "metamask",
       isRabby: kind === "rabby",
       request: async ({ method }: { method: string }) => {
         if (method === "eth_requestAccounts" || method === "eth_accounts") return [kind === "metamask" ? "0x1111111111111111111111111111111111111111" : "0x2222222222222222222222222222222222222222"];
         if (method === "eth_chainId") return chain;
-        if (method === "wallet_switchEthereumChain") { chain = "0xf22f"; return null; }
+        if (method === "wallet_switchEthereumChain") { chain = "0xf22f"; window.sessionStorage.setItem("mock-wallet-chain", chain); return null; }
         if (method === "wallet_addEthereumChain") return null;
         throw new Error(`Unexpected test provider request: ${method}`);
       },
@@ -146,7 +146,11 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
   await expect(page.getByRole("button", { name: "Switch network" })).toBeVisible();
   await page.getByRole("button", { name: "Switch network" }).click();
   await expect(page.locator(".wallet-pill")).toHaveAttribute("title", /Rabby · 0x2222/);
+  await page.reload();
+  await expect(page.locator(".wallet-pill")).toHaveAttribute("title", /Rabby · 0x2222/);
   await expect(page.getByRole("button", { name: "Disconnect" })).toBeVisible();
   await page.getByRole("button", { name: "Disconnect" }).click();
+  await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+  await page.reload();
   await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
 });
