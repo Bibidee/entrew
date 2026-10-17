@@ -1,0 +1,96 @@
+{
+  "repository": "Bibidee/entrew-fixtures",
+  "repository_default_branch": "main",
+  "historical_commits_excluded": [
+    "2dce6f15a507aca0b26dbd8c85214ad5faaade73",
+    "030ef93dad30a4b40a6fdcf44deaf84b78252a81"
+  ],
+  "program_id": null,
+  "fixtures": [
+    {
+      "fixture_id": "positive",
+      "target_path": "release-2026-10-16/positive",
+      "commit_sha": null,
+      "program_id": null,
+      "applicant_wallet": null,
+      "challenge_nonce": "2a493e936864ea275996a87fbf45cd63",
+      "expected_outcome": "QUALIFIED",
+      "evidence_paths": [
+        "src/charges.py",
+        "tests/test_idempotency.py",
+        "docs/idempotency.md"
+      ]
+    },
+    {
+      "fixture_id": "negative",
+      "target_path": "release-2026-10-16/negative",
+      "commit_sha": null,
+      "program_id": null,
+      "applicant_wallet": null,
+      "challenge_nonce": "b0e109174681067ef848131f5a96a6fc",
+      "expected_outcome": "NOT_ESTABLISHED",
+      "evidence_paths": [
+        "src/charges.py",
+        "tests/test_idempotency.py",
+        "docs/idempotency.md"
+      ]
+    },
+    {
+      "fixture_id": "corrected-revision",
+      "target_path": "release-2026-10-16/corrected-revision",
+      "program_id": null,
+      "applicant_wallet": null,
+      "revisions": [
+        {
+          "revision": "r1",
+          "commit_sha": null,
+          "challenge_nonce": "23e20d2ca594eb1a2034812a8945b508",
+          "expected_outcome": "NOT_ESTABLISHED"
+        },
+        {
+          "revision": "r2",
+          "commit_sha": null,
+          "challenge_nonce": "dd8ff039a4142856f9aec33a5a97915f",
+          "expected_outcome": "QUALIFIED"
+        }
+      ]
+    },
+    {
+      "fixture_id": "unavailable-evidence",
+      "target_path": "release-2026-10-16/unavailable-evidence",
+      "commit_sha": null,
+      "program_id": null,
+      "applicant_wallet": null,
+      "challenge_nonce": "e321bb1a0b099468edfeeb415c677e05",
+      "expected_outcome": "INCONCLUSIVE",
+      "evidence_paths": [
+        "src/charges.py",
+        "tests/test_payment_replay.py"
+      ],
+      "intentionally_absent_path": "tests/test_payment_replay.py"
+    },
+    {
+      "fixture_id": "unauthorized-action",
+      "target_path": "release-2026-10-16/unauthorized-action",
+      "commit_sha": null,
+      "program_id": null,
+      "applicant_wallet": null,
+      "unauthorized_wallet": null,
+      "target_entry_id": null,
+      "challenge_nonce": "fc2dbcdce81c9a35a48e585a61af22bf",
+      "expected_outcome": "REVERT_NO_STATE_CHANGE",
+      "evidence_paths": [
+        "src/charges.py",
+        "tests/test_idempotency.py"
+      ]
+    }
+  ],
+  "status": "DRAFT_BLOCKED",
+  "blockers": [
+    "fixture write authorization not provided for this run",
+    "separately authorized wallet addresses pending",
+    "temporary on-chain program ID pending",
+    "new immutable full commit SHAs pending publication"
+  ],
+  "fixture_write_authorized": false
+}

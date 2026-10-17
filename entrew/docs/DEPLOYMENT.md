@@ -2,11 +2,13 @@
 
 Last updated: 2026-10-16. This ledger records observed evidence; unresolved matrix items remain explicit.
 
+**Historical release record:** the deployment and lifecycle evidence below applies to the historical contract source `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5` and its recorded hash. The PR #6 base is `d81ad944a6a89e5713b7f1ca6c224b80e8e56769`; early remediation commit `d64552d38cbd244b647060f1c045550e2a484237` and the later consolidated candidate are both undeployed. Do not interpret this ledger as live evidence for the modified contract. Current status is in `../../docs/DEPLOYMENT.md` and `../../docs/TEST_RESULTS.md`.
+
 ## Source and provenance
 
 - Product repository: [Bibidee/entrew](https://github.com/Bibidee/entrew).
 - Contract source commit: `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5`.
-- Product main after frontend accessibility patch: `24d805dc3f6c61d07641161fa04fec70e4a55d8a`.
+- Historical Git reference after the frontend accessibility patch: `24d805dc3f6c61d07641161fa04fec70e4a55d8a`.
 - Contract source: `contracts/entrew_registry.py`.
 - SHA-256: `9bf815285cd31ed4fb14769dca8e2fa1755c36b91c5a0cf325660ba777891fcc`.
 - Repo-local GenLayer CLI: `0.39.1`; GenLayerJS: `1.1.8`.
@@ -42,6 +44,7 @@ Full CI: [GitHub Actions run 38894822355](https://github.com/Bibidee/entrew/acti
 
 - URL: [https://the-entrew.vercel.app](https://the-entrew.vercel.app).
 - Vercel deployment: [dpl_8Y5SPk1HZ5KHPreZzSXLUDGVrS4A](https://vercel.com/bibidees-projects/the-entrew/8Y5SPk1HZ5KHPreZzSXLUDGVrS4A), `READY`.
+- Vercel metadata reports a dirty CLI source tree anchored to `c421e35607e9d036812fc519854fbb0bfd456554` on `fix/genlayer-web-response-status`; it is not whole-artifact proof of a clean `24d805…` checkout. Direct comparison confirmed the deployed accessibility CSS and app component match `24d805…`, but that limited comparison does not establish a complete source tree digest.
 - Production env: contract `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`; chain `61999`; RPC `https://studio.genlayer.com/api`.
 - Brave production UI showed canonical `e1 QUALIFIED` and `e2 NOT ESTABLISHED`; evidence route direct navigation/reload worked with no console errors.
 - Responsive overflow assertions passed at the widths above; full repeated route sweep was interrupted by an intermittent RPC fetch.
@@ -70,7 +73,7 @@ Negative:
 
 ## Open checks and release state
 
-Requested Studionet deploy, production address configuration/redeploy, and real positive/negative lifecycles are complete.
+The historical release recorded here completed its Studionet deployment, production address configuration/redeploy, and real positive/negative lifecycles. The modified remediation contract has not been deployed.
 
 Not yet live-proven: corrected revision, controlled inconclusive and retry/cooldown, replay, unauthorized wallet, wrong-network real-wallet behavior, complete mobile/keyboard QA, and held-out semantic accuracy. The negative assessment RPC hash lookup had one transient “not found” response after its finalized SDK result and canonical state were read; later canonical readback preserved the outcome.
 

@@ -1,0 +1,218 @@
+{
+  "chain_id": 61999,
+  "contract_address": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+  "contract_source_sha256": "cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e",
+  "deployer_wallet": "0x527dA5f7022f14f7105e5f06cec1a8eff53556b5",
+  "deployment_tx_hash": "0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842",
+  "organizer_wallet": "0x7afc209ad72153f6c8ae7b8055bfba6e7f4d5efc",
+  "program_id": "p1",
+  "program_publish_tx_hash": "0x605522877ff620d0e978f0d891c0f191c05a94b5f36b84dd5445a6fa06211f06",
+  "cases": [
+    {
+      "case_id": "positive",
+      "entry_id": "e1",
+      "revision_id": "e1:r1",
+      "attempt_id": "a1",
+      "submission_tx_hash": "0x6d56f61b0bb786021c338d3042062481e92e7942b31804a0111b18f3d004c6ee",
+      "assessment_tx_hash": "0xbeb9c165d138ca5e796871693be9cca1ce8922e51862d047a6b07fc61dc08366",
+      "expected_repository": "Bibidee/entrew-fixtures",
+      "expected_commit_sha": "21025056efa8b2e3bfb72cd689dfbe81ddc94d8b",
+      "expected_wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "expected_nonce": "2a493e936864ea275996a87fbf45cd63",
+      "expected_marker_sha256": "c6e75e0026d5b3c843f52be2e2756275af79dd450d899e9266aba2060d4b43a8",
+      "expected_files": [
+        {
+          "path": "src/charges.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "c7db353864a12852edf812e33a408545cfb5422aef61f2b97b03e8424b81408d"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "d8d3f943ab6fce4f0ae27d12420cab981b784809bc6efc7494b5854f1017ca1b"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "classification": "REVISION_BOUND",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected_outcome": "QUALIFIED",
+      "expected_provenance": "REVISION_BOUND",
+      "expected_issue_code": "NONE",
+      "expected_criteria_statuses": [
+        "MET",
+        "MET"
+      ],
+      "assert_current_revision": true
+    },
+    {
+      "case_id": "negative",
+      "entry_id": "e2",
+      "revision_id": "e2:r1",
+      "attempt_id": "a2",
+      "submission_tx_hash": "0xd2943045031e917dbb42ae3db9db22184f580d018caf01ab94b7c701049f55d0",
+      "assessment_tx_hash": "0x343af64bcdcfa358406726e5513d82ffd365dec3e486af0fe768c35b5a52600f",
+      "expected_repository": "Bibidee/entrew-fixtures",
+      "expected_commit_sha": "74a589e3c115c89479acc067d8f51aae3e94f18a",
+      "expected_wallet": "0xf883bce8fcb120f714b147446342d7e4545bc988",
+      "expected_nonce": "b0e109174681067ef848131f5a96a6fc",
+      "expected_marker_sha256": "816b89e927d15c3e734a7fa799a55d30e63c06a8c8721efb43089b09cb6e945c",
+      "expected_files": [
+        {
+          "path": "src/charges.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "4c9f5b373dfda0d065fcb02d8195d3480fd73eeb42d1b87c56f6a7b81af48d56"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "eac82864d941c53c8fa9675cc32220172b58db2e48d28ae01256d23acd134a20"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "classification": "REVISION_BOUND",
+          "sha256": "e6e54a6cf015d3eaf0ff6b58884aa5f422109019485fc37c896cec7e6e30d8f2"
+        }
+      ],
+      "expected_outcome": "NOT_ESTABLISHED",
+      "expected_provenance": "REVISION_BOUND",
+      "expected_issue_code": "NONE",
+      "expected_criteria_statuses": [
+        "MET",
+        "MET"
+      ],
+      "assert_current_revision": true
+    },
+    {
+      "case_id": "corrected-r1",
+      "entry_id": "e1",
+      "revision_id": "e1:r2",
+      "attempt_id": "a3",
+      "submission_tx_hash": "0xcf96e471ad798873fd0a53387c23fad9b0989ab825ba11c9c519b26d9f9aee51",
+      "assessment_tx_hash": "0x9b780da09a9fa37ed6e270eb51650ac00d7e1973421215e08df6863321f1c961",
+      "expected_repository": "Bibidee/entrew-fixtures",
+      "expected_commit_sha": "2b03f595424abdb40e254c8647d068d84466dd5b",
+      "expected_wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "expected_nonce": "23e20d2ca594eb1a2034812a8945b508",
+      "expected_marker_sha256": "1e6797fc4ad30a988c6a83cf148bcc2e9bed462484fea0d3eb084d32f98e1e60",
+      "expected_files": [
+        {
+          "path": "src/charges.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "357c8baa75fc129230e40d99aa2cb8a77beb723af89b12d01b1f5560036cad41"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "18c19b44771d889a9ea0cd28344c5cc2d4998220cce00f2e16fdeaaf073259b5"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "classification": "REVISION_BOUND",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected_outcome": "NOT_ESTABLISHED",
+      "expected_provenance": "REVISION_BOUND",
+      "expected_issue_code": "NONE",
+      "expected_criteria_statuses": [
+        "MET",
+        "MET"
+      ],
+      "assert_current_revision": false
+    },
+    {
+      "case_id": "corrected-r2",
+      "entry_id": "e1",
+      "revision_id": "e1:r3",
+      "attempt_id": "a6",
+      "submission_tx_hash": "0xf42c585e2f885ecfb223070bbc70210ba153734dfbc63647dda2cfa83cb144e7",
+      "assessment_tx_hash": "0x159a8f8c671a56ef0ba1967b8cfd5a94e2e04661d0a20be3581cd6d9d7f41ed8",
+      "expected_repository": "Bibidee/entrew-fixtures",
+      "expected_commit_sha": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+      "expected_wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "expected_nonce": "dd8ff039a4142856f9aec33a5a97915f",
+      "expected_marker_sha256": "7a0cdcd8bfabef8c25dc60d4c9e9ee501f9c0882e0e82fbc8d977b07b36ed6df",
+      "expected_files": [
+        {
+          "path": "src/charges.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "7a4cb6b280c4cfe7ad5ff7cd00ad820cc18b2eac17e2c7edd7b73a338a4ed473"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "83a968f72433b9624b4974c3632ceb83814333ae538b1113c6d153a2c49d533a"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "classification": "REVISION_BOUND",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected_outcome": "QUALIFIED",
+      "expected_provenance": "REVISION_BOUND",
+      "expected_issue_code": "NONE",
+      "expected_criteria_statuses": [
+        "MET",
+        "MET"
+      ],
+      "assert_current_revision": true
+    },
+    {
+      "case_id": "unavailable-evidence",
+      "entry_id": "e3",
+      "revision_id": "e3:r1",
+      "attempt_id": "a5",
+      "submission_tx_hash": "0xa2e81f8128e65b38aa9915bba1b3b0f5f217694477aa52f1983defb4458428d6",
+      "assessment_tx_hash": "0xe6c7606d76a9052238cd5aadc36a091cb9a95c8af5b21eb0bc1a807fa9111638",
+      "expected_repository": "Bibidee/entrew-fixtures",
+      "expected_commit_sha": "a0cf78b7b8aa166fb9e93e70ebf0b4f54b0721bb",
+      "expected_wallet": "0x8355d011e1fc874f3a91245711420d0c92cb3e47",
+      "expected_nonce": "e321bb1a0b099468edfeeb415c677e05",
+      "expected_marker_sha256": "f5f1b36952f1972c951986dc9cab8e6c03bf93d7ae6df1ed9804762686fa5de3",
+      "expected_files": [
+        {
+          "path": "src/charges.py",
+          "classification": "REVISION_BOUND",
+          "sha256": "834d535fbd229ae630ed86ae682c512dbd1b3a9a2f960725067be04a0e4d93dc"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "classification": "REVISION_BOUND",
+          "sha256": "09661a2e8bb9571963a68399b91a7b1088e3244f4e5f01e9f96d5926e40bb10e"
+        },
+        {
+          "path": "tests/test_payment_replay.py",
+          "classification": "INSUFFICIENT",
+          "sha256": ""
+        }
+      ],
+      "expected_outcome": "INCONCLUSIVE",
+      "expected_provenance": "INSUFFICIENT",
+      "expected_issue_code": "SOURCE_FILE_UNAVAILABLE",
+      "expected_criteria_statuses": [
+        "UNVERIFIABLE",
+        "MET"
+      ],
+      "assert_current_revision": true
+    }
+  ],
+  "expected_qualified_entry_ids": [
+    "e1"
+  ],
+  "unauthorized_action": {
+    "transaction_hash": "0x96bbdb5fc9c06f9771cd16bbb0396f51b03a63fdcebbae049045c84c8434c428",
+    "target_case_id": "negative",
+    "expected_wallet": "0x02b137dde85c7798f06665dc19449b8797882055",
+    "expected_method": "submit_revision",
+    "expected_args": [
+      "e2",
+      "74a589e3c115c89479acc067d8f51aae3e94f18a",
+      "[\"src/charges.py\",\"tests/test_idempotency.py\",\"docs/idempotency.md\"]",
+      "{\"0\":[\"src/charges.py\",\"tests/test_idempotency.py\"],\"1\":[\"docs/idempotency.md\"]}",
+      "fc2dbcdce81c9a35a48e585a61af22bf"
+    ]
+  }
+}

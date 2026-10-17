@@ -1,0 +1,890 @@
+{
+  "captured_at": "2026-10-16T19:37:04.310Z",
+  "network": {
+    "chain_id": 61999,
+    "rpc": "https://studio.genlayer.com/api"
+  },
+  "contract": {
+    "address": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+    "source_sha256": "cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e",
+    "deployment_tx_hash": "0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842"
+  },
+  "program": {
+    "program_id": "p1",
+    "publish_tx_hash": "0x605522877ff620d0e978f0d891c0f191c05a94b5f36b84dd5445a6fa06211f06",
+    "terms": {
+      "title": "ENTREW idempotency lifecycle",
+      "summary": "Live verification of observable idempotency behavior.",
+      "description": "Applicants submit immutable repository evidence for implementation and documentation criteria.",
+      "deadline": 1792782880,
+      "terms_digest": "7ca443c38893a41fe8cc63c3c34c2dc27e06778a9b56a824160820b83966bdec",
+      "criteria": [
+        {
+          "key": "idempotency-behavior",
+          "type": "IMPLEMENTATION",
+          "requirement": "The repository charge submission path reuses the first result for a repeated idempotency key and payload, and rejects the same key when the payload changes.",
+          "evidence_expectations": "A bounded implementation file and executable test showing replay reuse and changed-payload conflict."
+        },
+        {
+          "key": "idempotency-documentation",
+          "type": "DOCUMENTATION",
+          "requirement": "The repository documents the idempotency-key request behavior and states that a repeated identical request creates one charge.",
+          "evidence_expectations": "A bounded documentation file that states the request contract and one-charge replay behavior."
+        }
+      ]
+    }
+  },
+  "fixture_branch": {
+    "repository": "Bibidee/entrew-fixtures",
+    "branch": "entrew-live-2026-10-16",
+    "url": "https://github.com/Bibidee/entrew-fixtures/tree/entrew-live-2026-10-16",
+    "commits": {
+      "positive": "21025056efa8b2e3bfb72cd689dfbe81ddc94d8b",
+      "negative": "74a589e3c115c89479acc067d8f51aae3e94f18a",
+      "corrected_r1": "2b03f595424abdb40e254c8647d068d84466dd5b",
+      "corrected_r2": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+      "unavailable": "a0cf78b7b8aa166fb9e93e70ebf0b4f54b0721bb",
+      "unauthorized": "ef46b5dfc14045aff9b8d56aae594288733085fc"
+    }
+  },
+  "transactions": [
+    {
+      "label": "deployment",
+      "hash": "0xe77805efcf2f4dd30f0d4fb787174628411c691789fdb78354125dbb1990b842",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x527dA5f7022f14f7105E5f06cEc1a8EFf53556b5",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792176303",
+      "votes": {
+        "0x3D83ab507785b95ca5C208bEc80CCe3D5ca98100": "agree",
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0x5310dcF075E0BD47d29B8ec6581F736C767f54D2": "idle",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "idle",
+        "0x76c25AFC12c75485703cCFfd0083AA6201455B25": "agree"
+      }
+    },
+    {
+      "label": "program_publish",
+      "hash": "0x605522877ff620d0e978f0d891c0f191c05a94b5f36b84dd5445a6fa06211f06",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7AFc209aD72153f6c8Ae7B8055bfbA6E7f4d5EfC",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178245",
+      "votes": {
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "idle",
+        "0xBBb165E4c9d73a1493D363280f7067Cd07891dBE": "agree",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "idle",
+        "0xacc2459F341D7a887bcA8FAA62F1EC9378d4Bc67": "agree",
+        "0xec2Fb79cd12255Eb34886CEd7332f27B98DEe658": "agree"
+      }
+    },
+    {
+      "label": "positive_submit",
+      "hash": "0x6d56f61b0bb786021c338d3042062481e92e7942b31804a0111b18f3d004c6ee",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178610",
+      "votes": {
+        "0x14402D49f317CE1a2F35BAE01b1804A2A9703dCb": "agree",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x5310dcF075E0BD47d29B8ec6581F736C767f54D2": "agree",
+        "0xBBb165E4c9d73a1493D363280f7067Cd07891dBE": "agree",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "agree"
+      }
+    },
+    {
+      "label": "positive_assess",
+      "hash": "0xbeb9c165d138ca5e796871693be9cca1ce8922e51862d047a6b07fc61dc08366",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178663",
+      "votes": {
+        "0x4404Fb70d490c935758146f42A73DC850FF95C71": "idle",
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0xBBb165E4c9d73a1493D363280f7067Cd07891dBE": "idle",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "agree",
+        "0xec2Fb79cd12255Eb34886CEd7332f27B98DEe658": "agree"
+      }
+    },
+    {
+      "label": "negative_submit",
+      "hash": "0xd2943045031e917dbb42ae3db9db22184f580d018caf01ab94b7c701049f55d0",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS",
+        "ERROR"
+      ],
+      "sender": "0xf883bCE8FcB120F714B147446342D7E4545Bc988",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178730",
+      "votes": {
+        "0x14402D49f317CE1a2F35BAE01b1804A2A9703dCb": "idle",
+        "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "idle",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "agree",
+        "0x9ea87b28DcA2F79fe108CF06a4c13B4c876AC23d": "agree",
+        "0xec2Fb79cd12255Eb34886CEd7332f27B98DEe658": "agree"
+      }
+    },
+    {
+      "label": "negative_assess",
+      "hash": "0x343af64bcdcfa358406726e5513d82ffd365dec3e486af0fe768c35b5a52600f",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0xf883bCE8FcB120F714B147446342D7E4545Bc988",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178782",
+      "votes": {
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0x772ffCd1dF6Cc566eC4b8d3f4F4f8eBbb6B36C84": "idle",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "agree",
+        "0xE6BD8050758CB15fC88387223E31Ae2708B119dC": "idle",
+        "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "agree"
+      }
+    },
+    {
+      "label": "corrected_r1_submit",
+      "hash": "0xcf96e471ad798873fd0a53387c23fad9b0989ab825ba11c9c519b26d9f9aee51",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178846",
+      "votes": {
+        "0x36728d2a123aB444E603EE5b2ad17d18Bb193557": "agree",
+        "0x5310dcF075E0BD47d29B8ec6581F736C767f54D2": "agree",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "agree",
+        "0x772ffCd1dF6Cc566eC4b8d3f4F4f8eBbb6B36C84": "agree",
+        "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "agree"
+      }
+    },
+    {
+      "label": "corrected_r1_assess",
+      "hash": "0x9b780da09a9fa37ed6e270eb51650ac00d7e1973421215e08df6863321f1c961",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS",
+        "ERROR"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178889",
+      "votes": {
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "agree",
+        "0x5310dcF075E0BD47d29B8ec6581F736C767f54D2": "agree",
+        "0x90402341F0B0e97b23023c0a87de957FB7148E0F": "idle",
+        "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "idle"
+      }
+    },
+    {
+      "label": "corrected_r2_submit",
+      "hash": "0xf42c585e2f885ecfb223070bbc70210ba153734dfbc63647dda2cfa83cb144e7",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178940",
+      "votes": {
+        "0x14402D49f317CE1a2F35BAE01b1804A2A9703dCb": "agree",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x9ea87b28DcA2F79fe108CF06a4c13B4c876AC23d": "agree",
+        "0xBBb165E4c9d73a1493D363280f7067Cd07891dBE": "agree",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "agree"
+      }
+    },
+    {
+      "label": "corrected_r2_assess",
+      "hash": "0xcd1854096bf1406f3666703710f3e3e425ba01d2bee28c4a0c944bf37819966f",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS",
+        "ERROR"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792178983",
+      "votes": {
+        "0x03D58A4DeF6fDFc032A56374785a5F571D07Bc11": "agree",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0x9ea87b28DcA2F79fe108CF06a4c13B4c876AC23d": "idle",
+        "0xec2Fb79cd12255Eb34886CEd7332f27B98DEe658": "idle"
+      }
+    },
+    {
+      "label": "unavailable_submit",
+      "hash": "0xa2e81f8128e65b38aa9915bba1b3b0f5f217694477aa52f1983defb4458428d6",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x8355D011e1Fc874f3a91245711420d0C92cB3E47",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792179035",
+      "votes": {
+        "0x4404Fb70d490c935758146f42A73DC850FF95C71": "idle",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "agree",
+        "0x9ea87b28DcA2F79fe108CF06a4c13B4c876AC23d": "agree",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "idle",
+        "0xec2Fb79cd12255Eb34886CEd7332f27B98DEe658": "agree"
+      }
+    },
+    {
+      "label": "unavailable_assess",
+      "hash": "0xe6c7606d76a9052238cd5aadc36a091cb9a95c8af5b21eb0bc1a807fa9111638",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS",
+        "ERROR"
+      ],
+      "sender": "0x8355D011e1Fc874f3a91245711420d0C92cB3E47",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792179086",
+      "votes": {
+        "0x3D83ab507785b95ca5C208bEc80CCe3D5ca98100": "agree",
+        "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "idle",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "idle",
+        "0xE6BD8050758CB15fC88387223E31Ae2708B119dC": "agree",
+        "0xacc2459F341D7a887bcA8FAA62F1EC9378d4Bc67": "agree"
+      }
+    },
+    {
+      "label": "replay_control",
+      "hash": "0x14df1250544ae8d3ed74426241105070a4533bdc9ad1a7aec8b0637783203ac6",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "ERROR"
+      ],
+      "sender": "0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792179140",
+      "votes": {
+        "0x03D58A4DeF6fDFc032A56374785a5F571D07Bc11": "agree",
+        "0x14402D49f317CE1a2F35BAE01b1804A2A9703dCb": "idle",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "agree",
+        "0xE6BD8050758CB15fC88387223E31Ae2708B119dC": "idle"
+      }
+    },
+    {
+      "label": "unauthorized_control",
+      "hash": "0x96bbdb5fc9c06f9771cd16bbb0396f51b03a63fdcebbae049045c84c8434c428",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "ERROR"
+      ],
+      "sender": "0x02B137ddE85c7798f06665Dc19449b8797882055",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792179191",
+      "votes": {
+        "0x14402D49f317CE1a2F35BAE01b1804A2A9703dCb": "agree",
+        "0x4EDbE1FC9EAeC7b0EBA849b0C76AE73Eb0ad5C47": "idle",
+        "0x772ffCd1dF6Cc566eC4b8d3f4F4f8eBbb6B36C84": "idle",
+        "0xDB1c35c1f05d885999b8f13e5735307BcC16Be88": "agree",
+        "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "agree"
+      }
+    },
+    {
+      "label": "corrected_r2_retry_assess",
+      "hash": "0x159a8f8c671a56ef0ba1967b8cfd5a94e2e04661d0a20be3581cd6d9d7f41ed8",
+      "status": "FINALIZED",
+      "result_name": "MAJORITY_AGREE",
+      "execution_results": [
+        "SUCCESS"
+      ],
+      "sender": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "recipient": "0x882D765Bc9c1a6A83091858620bC60212135d25b",
+      "created_timestamp": "1792187403",
+      "votes": {}
+    }
+  ],
+  "canonical": {
+    "entries": {
+      "e1": {
+        "applicant": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+        "created_at": 1792178610,
+        "current_result": "INCONCLUSIVE",
+        "current_revision": "e1:r3",
+        "deadline_snapshot": 1792782880,
+        "entry_id": "e1",
+        "last_conclusive_revision": "",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "qualified": false,
+        "repo": "entrew-fixtures",
+        "revision_count": 3
+      },
+      "e2": {
+        "applicant": "0xf883bce8fcb120f714b147446342d7e4545bc988",
+        "created_at": 1792178730,
+        "current_result": "INCONCLUSIVE",
+        "current_revision": "e2:r1",
+        "deadline_snapshot": 1792782880,
+        "entry_id": "e2",
+        "last_conclusive_revision": "",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "qualified": false,
+        "repo": "entrew-fixtures",
+        "revision_count": 1
+      },
+      "e3": {
+        "applicant": "0x8355d011e1fc874f3a91245711420d0c92cb3e47",
+        "created_at": 1792179035,
+        "current_result": "INCONCLUSIVE",
+        "current_revision": "e3:r1",
+        "deadline_snapshot": 1792782880,
+        "entry_id": "e3",
+        "last_conclusive_revision": "",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "qualified": false,
+        "repo": "entrew-fixtures",
+        "revision_count": 1
+      }
+    },
+    "revisions": {
+      "e1:r1": {
+        "applicant": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+        "claim_nonce": "2a493e936864ea275996a87fbf45cd63",
+        "commit_sha": "21025056efa8b2e3bfb72cd689dfbe81ddc94d8b",
+        "entry_id": "e1",
+        "evidence_mappings": {
+          "0": [
+            "src/charges.py",
+            "tests/test_idempotency.py"
+          ],
+          "1": [
+            "docs/idempotency.md"
+          ]
+        },
+        "evidence_paths": [
+          "docs/idempotency.md",
+          "src/charges.py",
+          "tests/test_idempotency.py"
+        ],
+        "final_outcome": "INCONCLUSIVE",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "entrew-fixtures",
+        "revision_id": "e1:r1",
+        "revision_index": 1,
+        "snapshot_digest": "1b018bc8101a11cedd36b466c851f7f7155beb6428f87e849c54b870b3999b86",
+        "submitted_at": 1792178610
+      },
+      "e1:r2": {
+        "applicant": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+        "claim_nonce": "23e20d2ca594eb1a2034812a8945b508",
+        "commit_sha": "2b03f595424abdb40e254c8647d068d84466dd5b",
+        "entry_id": "e1",
+        "evidence_mappings": {
+          "0": [
+            "src/charges.py",
+            "tests/test_idempotency.py"
+          ],
+          "1": [
+            "docs/idempotency.md"
+          ]
+        },
+        "evidence_paths": [
+          "docs/idempotency.md",
+          "src/charges.py",
+          "tests/test_idempotency.py"
+        ],
+        "final_outcome": "INCONCLUSIVE",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "entrew-fixtures",
+        "revision_id": "e1:r2",
+        "revision_index": 2,
+        "snapshot_digest": "4105d4fea20a3e9b7108793326202f3e82f49f97762b17dbf12c96c6e9d69db0",
+        "submitted_at": 1792178846
+      },
+      "e1:r3": {
+        "applicant": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+        "claim_nonce": "dd8ff039a4142856f9aec33a5a97915f",
+        "commit_sha": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+        "entry_id": "e1",
+        "evidence_mappings": {
+          "0": [
+            "src/charges.py",
+            "tests/test_idempotency.py"
+          ],
+          "1": [
+            "docs/idempotency.md"
+          ]
+        },
+        "evidence_paths": [
+          "docs/idempotency.md",
+          "src/charges.py",
+          "tests/test_idempotency.py"
+        ],
+        "final_outcome": "INCONCLUSIVE",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "entrew-fixtures",
+        "revision_id": "e1:r3",
+        "revision_index": 3,
+        "snapshot_digest": "ad3d412e78f6491d96f9678b00c221f6d9cc802021847e82f973e47bc75ac014",
+        "submitted_at": 1792178940
+      },
+      "e2:r1": {
+        "applicant": "0xf883bce8fcb120f714b147446342d7e4545bc988",
+        "claim_nonce": "b0e109174681067ef848131f5a96a6fc",
+        "commit_sha": "74a589e3c115c89479acc067d8f51aae3e94f18a",
+        "entry_id": "e2",
+        "evidence_mappings": {
+          "0": [
+            "src/charges.py",
+            "tests/test_idempotency.py"
+          ],
+          "1": [
+            "docs/idempotency.md"
+          ]
+        },
+        "evidence_paths": [
+          "docs/idempotency.md",
+          "src/charges.py",
+          "tests/test_idempotency.py"
+        ],
+        "final_outcome": "INCONCLUSIVE",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "entrew-fixtures",
+        "revision_id": "e2:r1",
+        "revision_index": 1,
+        "snapshot_digest": "520e27317d0c1560e583b570d9e81f422258c20a03abf50459cc915c2ba9343a",
+        "submitted_at": 1792178730
+      },
+      "e3:r1": {
+        "applicant": "0x8355d011e1fc874f3a91245711420d0c92cb3e47",
+        "claim_nonce": "e321bb1a0b099468edfeeb415c677e05",
+        "commit_sha": "a0cf78b7b8aa166fb9e93e70ebf0b4f54b0721bb",
+        "entry_id": "e3",
+        "evidence_mappings": {
+          "0": [
+            "tests/test_payment_replay.py"
+          ],
+          "1": [
+            "docs/idempotency.md"
+          ]
+        },
+        "evidence_paths": [
+          "docs/idempotency.md",
+          "src/charges.py",
+          "tests/test_payment_replay.py"
+        ],
+        "final_outcome": "INCONCLUSIVE",
+        "owner": "bibidee",
+        "program_id": "p1",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "entrew-fixtures",
+        "revision_id": "e3:r1",
+        "revision_index": 1,
+        "snapshot_digest": "2090a40ca17a245e119a3f61d3548924c285f8410b0e5116810a1453d08f8233",
+        "submitted_at": 1792179035
+      }
+    },
+    "reviews": {
+      "a1": {
+        "assessed_at": 1792178663,
+        "attempt_id": "a1",
+        "commit_sha": "21025056efa8b2e3bfb72cd689dfbe81ddc94d8b",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e1",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e1:r1",
+        "snapshot_digest": "1b018bc8101a11cedd36b466c851f7f7155beb6428f87e849c54b870b3999b86"
+      },
+      "a2": {
+        "assessed_at": 1792178782,
+        "attempt_id": "a2",
+        "commit_sha": "74a589e3c115c89479acc067d8f51aae3e94f18a",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e2",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e2:r1",
+        "snapshot_digest": "520e27317d0c1560e583b570d9e81f422258c20a03abf50459cc915c2ba9343a"
+      },
+      "a3": {
+        "assessed_at": 1792178889,
+        "attempt_id": "a3",
+        "commit_sha": "2b03f595424abdb40e254c8647d068d84466dd5b",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e1",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e1:r2",
+        "snapshot_digest": "4105d4fea20a3e9b7108793326202f3e82f49f97762b17dbf12c96c6e9d69db0"
+      },
+      "a4": {
+        "assessed_at": 1792178983,
+        "attempt_id": "a4",
+        "commit_sha": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e1",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e1:r3",
+        "snapshot_digest": "ad3d412e78f6491d96f9678b00c221f6d9cc802021847e82f973e47bc75ac014"
+      },
+      "a5": {
+        "assessed_at": 1792179086,
+        "attempt_id": "a5",
+        "commit_sha": "a0cf78b7b8aa166fb9e93e70ebf0b4f54b0721bb",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e3",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e3:r1",
+        "snapshot_digest": "2090a40ca17a245e119a3f61d3548924c285f8410b0e5116810a1453d08f8233"
+      },
+      "a6": {
+        "assessed_at": 1792187403,
+        "attempt_id": "a6",
+        "commit_sha": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+        "criteria": [
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 0,
+            "status": "UNVERIFIABLE"
+          },
+          {
+            "evidence_paths": [],
+            "explanation": "",
+            "index": 1,
+            "status": "UNVERIFIABLE"
+          }
+        ],
+        "entry_id": "e1",
+        "files": [],
+        "issue_code": "REPOSITORY_UNAVAILABLE",
+        "marker_sha256": "",
+        "outcome": "INCONCLUSIVE",
+        "provenance": "PROVIDER_UNAVAILABLE",
+        "repo": "bibidee/entrew-fixtures",
+        "review_version": 1,
+        "revision_id": "e1:r3"
+      }
+    },
+    "qualified_roster": {
+      "count": 0,
+      "entries": []
+    }
+  },
+  "controls": {
+    "replay_tx_hash": "0x14df1250544ae8d3ed74426241105070a4533bdc9ad1a7aec8b0637783203ac6",
+    "unauthorized_tx_hash": "0x96bbdb5fc9c06f9771cd16bbb0396f51b03a63fdcebbae049045c84c8434c428"
+  },
+  "failed_publication_attempts": [
+    "0x753bd6510c016c88a9ef90b28730f48edacaec100d1c0c58f55eb18ebf522af8",
+    "0x1b3679d2100e3fa5a446526f1d1061d023642595a7d6bf7ff7be3ba6959dd672"
+  ],
+  "verdict": "LIVE_TRANSACTIONS_FINALIZED_EXTERNAL_EVIDENCE_PROVIDER_REMAINED_UNAVAILABLE",
+  "accounts": {
+    "organizer": {
+      "name": "polyglot-publisher",
+      "address": "0x7afc209ad72153f6c8ae7b8055bfba6e7f4d5efc"
+    },
+    "positive_and_corrected": {
+      "name": "live-alice",
+      "address": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa"
+    },
+    "negative": {
+      "name": "live-bob",
+      "address": "0xf883bce8fcb120f714b147446342d7e4545bc988"
+    },
+    "unavailable": {
+      "name": "live-carol",
+      "address": "0x8355d011e1fc874f3a91245711420d0c92cb3e47"
+    },
+    "unauthorized": {
+      "name": "live-dave",
+      "address": "0x02b137dde85c7798f06665dc19449b8797882055"
+    }
+  },
+  "source_attestation": {
+    "sha256": "cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e",
+    "git_blob": "8348ba2282fc062e9fe32e488245d536bd138334",
+    "chain_id": 61999,
+    "rpc": "https://studio.genlayer.com/api"
+  },
+  "fixtures": [
+    {
+      "id": "positive",
+      "commit": "21025056efa8b2e3bfb72cd689dfbe81ddc94d8b",
+      "wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "nonce": "2a493e936864ea275996a87fbf45cd63",
+      "marker_sha256": "c6e75e0026d5b3c843f52be2e2756275af79dd450d899e9266aba2060d4b43a8",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "c7db353864a12852edf812e33a408545cfb5422aef61f2b97b03e8424b81408d"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "sha256": "d8d3f943ab6fce4f0ae27d12420cab981b784809bc6efc7494b5854f1017ca1b"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected": "QUALIFIED"
+    },
+    {
+      "id": "negative",
+      "commit": "74a589e3c115c89479acc067d8f51aae3e94f18a",
+      "wallet": "0xf883bce8fcb120f714b147446342d7e4545bc988",
+      "nonce": "b0e109174681067ef848131f5a96a6fc",
+      "marker_sha256": "816b89e927d15c3e734a7fa799a55d30e63c06a8c8721efb43089b09cb6e945c",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "4c9f5b373dfda0d065fcb02d8195d3480fd73eeb42d1b87c56f6a7b81af48d56"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "sha256": "eac82864d941c53c8fa9675cc32220172b58db2e48d28ae01256d23acd134a20"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "e6e54a6cf015d3eaf0ff6b58884aa5f422109019485fc37c896cec7e6e30d8f2"
+        }
+      ],
+      "expected": "NOT_ESTABLISHED"
+    },
+    {
+      "id": "corrected-r1",
+      "commit": "2b03f595424abdb40e254c8647d068d84466dd5b",
+      "wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "nonce": "23e20d2ca594eb1a2034812a8945b508",
+      "marker_sha256": "1e6797fc4ad30a988c6a83cf148bcc2e9bed462484fea0d3eb084d32f98e1e60",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "357c8baa75fc129230e40d99aa2cb8a77beb723af89b12d01b1f5560036cad41"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "sha256": "18c19b44771d889a9ea0cd28344c5cc2d4998220cce00f2e16fdeaaf073259b5"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected": "NOT_ESTABLISHED"
+    },
+    {
+      "id": "corrected-r2",
+      "commit": "d7b7fe8eec028c6755dd3accf65c6e79ad736e9e",
+      "wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "nonce": "dd8ff039a4142856f9aec33a5a97915f",
+      "marker_sha256": "7a0cdcd8bfabef8c25dc60d4c9e9ee501f9c0882e0e82fbc8d977b07b36ed6df",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "7a4cb6b280c4cfe7ad5ff7cd00ad820cc18b2eac17e2c7edd7b73a338a4ed473"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "sha256": "83a968f72433b9624b4974c3632ceb83814333ae538b1113c6d153a2c49d533a"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected": "QUALIFIED"
+    },
+    {
+      "id": "unavailable-evidence",
+      "commit": "a0cf78b7b8aa166fb9e93e70ebf0b4f54b0721bb",
+      "wallet": "0x8355d011e1fc874f3a91245711420d0c92cb3e47",
+      "nonce": "e321bb1a0b099468edfeeb415c677e05",
+      "marker_sha256": "f5f1b36952f1972c951986dc9cab8e6c03bf93d7ae6df1ed9804762686fa5de3",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "834d535fbd229ae630ed86ae682c512dbd1b3a9a2f960725067be04a0e4d93dc"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "09661a2e8bb9571963a68399b91a7b1088e3244f4e5f01e9f96d5926e40bb10e"
+        },
+        {
+          "path": "tests/test_payment_replay.py",
+          "sha256": ""
+        }
+      ],
+      "expected": "INCONCLUSIVE",
+      "absent": "tests/test_payment_replay.py"
+    },
+    {
+      "id": "unauthorized-action",
+      "commit": "ef46b5dfc14045aff9b8d56aae594288733085fc",
+      "wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+      "attacker": "0x02b137dde85c7798f06665dc19449b8797882055",
+      "nonce": "fc2dbcdce81c9a35a48e585a61af22bf",
+      "marker_sha256": "a9abe12d9c5bba9e129fb7a64b2a268aee8c666e17324e469520fb3571d0a0bf",
+      "files": [
+        {
+          "path": "src/charges.py",
+          "sha256": "834d535fbd229ae630ed86ae682c512dbd1b3a9a2f960725067be04a0e4d93dc"
+        },
+        {
+          "path": "tests/test_idempotency.py",
+          "sha256": "7b8427fe373ca770bf143c090c5faab9e41022af854bc681dfe58f2e4456602f"
+        },
+        {
+          "path": "docs/idempotency.md",
+          "sha256": "3d1f469ec3599774105f1667a40dd26ca7bb4d304c014015c238ae8a985faa6f"
+        }
+      ],
+      "expected": "CONTROL_ONLY"
+    }
+  ],
+  "retry_policy": {
+    "cooldown_seconds": 600,
+    "max_inconclusive_rechecks": 2,
+    "positive_current_revision": "e1:r3",
+    "last_positive_assessment": "a4",
+    "retry_required": false,
+    "retry_attempt_id": "a6",
+    "retry_tx_hash": "0x159a8f8c671a56ef0ba1967b8cfd5a94e2e04661d0a20be3581cd6d9d7f41ed8",
+    "retry_outcome": "INCONCLUSIVE",
+    "retry_issue_code": "REPOSITORY_UNAVAILABLE"
+  }
+}

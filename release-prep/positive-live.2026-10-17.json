@@ -1,0 +1,34 @@
+{
+  "chain_id": 61999,
+  "contract_address": "0xB1DA4Ab4FfAa5Fc543A628f190B2A52EaC54b592",
+  "contract_source_sha256": "b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8",
+  "deployer_wallet": "0x7afc209ad72153f6c8ae7b8055bfba6e7f4d5efc",
+  "organizer_wallet": "0x7afc209ad72153f6c8ae7b8055bfba6e7f4d5efc",
+  "applicant_wallet": "0x7eb2a4b4e913df62eae807ef60509b3b7284c7fa",
+  "deployment_tx_hash": "0x98d9934312b5a36e4c9ced139aef642f0d098d195b254c3dccf2c0743f7207a7",
+  "program_publish_tx_hash": "0x115eaa1d986b15ea4494a51eabd389142d0d4f44e97c6d909daaf8158b0bfaa2",
+  "submission_tx_hash": "0xf9d732ee1bbe580f70095dfaf39238b6d4421728cde6063903f903b7f1c883a9",
+  "assessment_tx_hash": "0x1c27335c80d64892266c621219cb12d48fec086a4061b66d20bb26c8c06cd60f",
+  "program_id": "p1",
+  "entry_id": "e1",
+  "revision_id": "e1:r1",
+  "attempt_id": "a1",
+  "program": {
+    "title": "Corrected positive idempotency verification",
+    "summary": "Verify exact-revision idempotency implementation and its public documentation.",
+    "description": "Applicants must provide exact GitHub revision evidence for a deterministic charge handler that replays a matching idempotency key without creating a second charge, plus documentation describing that behavior.",
+    "deadline": 1792363627,
+    "terms_digest": "554d4917cfa4f708b157cb5ec6cb1efa16fd891bcb0d80b31d8861754fbb5416",
+    "criteria": [{"key":"idempotency-implementation","type":"IMPLEMENTATION","requirement":"The submitted implementation replays a matching idempotency key without creating a second charge and rejects reuse of that key with different payload data.","evidence_expectations":"A bounded source file defining the charge handler and its idempotency behavior."},{"key":"idempotency-documentation","type":"DOCUMENTATION","requirement":"The submitted documentation states that matching idempotency-key requests replay one charge and that conflicting payload reuse is rejected.","evidence_expectations":"A bounded documentation file that describes both replay and conflict behavior."}]
+  },
+  "fixture": {
+    "owner": "Bibidee",
+    "repo": "entrew-fixtures",
+    "commit_sha": "a258bc4bd961a1b2978bd63a4d1ab13b6b436fcd",
+    "nonce": "31b32d7c9a0c8ec4652487a7af62dd2a",
+    "marker_sha256": "dfdd4be5b84d273cf1ff72973f4974cbfe6f1968079153a307bdfff584e6a5ed",
+    "evidence_paths": ["replacement-fixtures/positive/src/charges.py", "replacement-fixtures/positive/docs/idempotency.md"],
+    "evidence_mappings": {"0":["replacement-fixtures/positive/src/charges.py"],"1":["replacement-fixtures/positive/docs/idempotency.md"]},
+    "artifacts": [{"path":".entrew/claim.json","git_blob":"b024cd8afd9639667b01ebc4da9975c583d3e0b8","sha256":"dfdd4be5b84d273cf1ff72973f4974cbfe6f1968079153a307bdfff584e6a5ed"},{"path":"replacement-fixtures/positive/src/charges.py","git_blob":"9ac12fe45ab9795327a4e001ef27466d8a865df9","sha256":"a160ead85293bc3a625002621ae83fca82f9db2cd55cc05b2d0ff033e149080e"},{"path":"replacement-fixtures/positive/docs/idempotency.md","git_blob":"99b079139d5b998cc805764f65b08db7624de3cf","sha256":"47900c281e89c8607c17c85ad915ce2af740be593de22573f7de33b7b7161f69"}]
+  }
+}

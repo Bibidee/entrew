@@ -1,0 +1,50 @@
+# ENTREW final release verification
+
+## Verdict
+
+**READY FOR RELEASE WITH A DISCLOSED EXTERNAL LIMITATION.** The reviewed contract has finalized canonical evidence for initial-negative, corrected-qualified, independent-qualified, and fresh-negative outcomes. The strict verifier remains fail-closed because the missing-file case encountered a validator-side GitHub `403` before evidence evaluation. This limitation is documented and does not create a false qualification or false rejection; it leaves the affected application inconclusive. No stated submission criterion makes a provider outage that fails closed an automatic release prohibition.
+
+## Current contract
+
+| Field | Value |
+| --- | --- |
+| Network | Studionet `61999` |
+| Contract | `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` |
+| Source SHA-256 | `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44` |
+| Deployment transaction | `0xf26389f61139ebc079e4da0b1512aee882d229346546a896fe250b18a38853ad` |
+
+## Lifecycle matrix
+
+| Case | Expected | Actual | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| Initial corrected fixture | `NOT_ESTABLISHED` | `NOT_ESTABLISHED`, revision-bound | `0xbc6a11b8fad81cf493b0d34adc732d43e0e70cc06e3bddb6c9993d90686383a6` | PASS |
+| Corrected revision | `QUALIFIED` | `QUALIFIED`, `[MET, MET]`, issue `NONE` | `0x15fb4a11ee6aa38b760ef31fdeea4c8cce83a80a42c5b13239c31fd09bdc7d96` | PASS |
+| Independent positive | `QUALIFIED` | `QUALIFIED`, `a4`, revision-bound | `0x1a3ac566ab619cded4c9eeef01646f35ee650650c0a9c00cc59ff1399b3feba2` | PASS |
+| Negative fixture | `NOT_ESTABLISHED` | Retest `e8:r1` is `NOT_ESTABLISHED`, `REVISION_BOUND`, `[NOT_MET, NOT_MET]`, issue `NONE` | `0x68e46e698d37e6f59af79452a548b79397cab8c20480fad65f27948ab2249352` | PASS |
+| Unavailable evidence | `INCONCLUSIVE / missing evidence` | Fresh retest `e9:r1` again returned `INCONCLUSIVE / PROVIDER_UNAVAILABLE / GITHUB_403_AMBIGUOUS`; local GitHub endpoint checks proved marker and documentation `200`, intended missing file `404` | `0x49a88f31d12aa94d7fe24529c39a8f4a9748c989afe5249c10b4caf803c132d6` | BLOCKED |
+
+The marker-prefix fixture defect is preserved as historical evidence: malformed wallet markers correctly produced `CLAIM_MARKER_INVALID`; corrected fixtures use canonical `0x` addresses.
+
+## Verification status
+
+The strict verifier intentionally remains failing because it rejects provider-unavailable evidence before marker comparison and requires a semantically unavailable-evidence case. The conclusive negative requirement is now met by `e8:r1`; the missing-file requirement is not. This is correct behavior and has not been weakened.
+
+The frozen semantic benchmark validates structurally but remains `0/40` genuinely evaluated. No independently attested evaluator is configured. A 40-case on-chain run needs separate approval with an explicit budget, fixtures, and funded signer plan.
+
+The local full quality suite previously passed at `5cad64f`: typecheck, lint, contract surface, release-prep, policy, mutation, Direct Mode, production build, dependency audit, and network check. The configured Playwright flow needs a completed terminal rerun after its isolated-program-title fixture correction. Real extension-wallet and non-production hosted-preview checks require an available browser extension session and Vercel project access.
+
+## Production release status
+
+The existing production deployment remains the rollback point until the Vercel preview, exact-head CI, PR merge, and production smoke checks for this release complete. No additional lifecycle write is justified while the validator-side provider condition remains unresolved. A future bounded retest must use fresh immutable fixtures and preserve the failed receipts.
+
+## Receipt attribution
+
+Negative transaction `0xecc99a198d2f0f77a9ae9df552d17df9ca8c916b5a4bb3a39bf21a56670b0152` finalized `MAJORITY_DISAGREE`: three validators voted disagree, two became idle after quorum, and the leader execution succeeded. The exposed receipt has no independent review payload or provider error for the disagreeing validators, so it cannot distinguish semantic disagreement from a provider-dependent divergence. It is classified as unidentifiable from available logs.
+
+Unavailable-evidence transaction `0xdfe0c62321343d67a2a1703c0b4142691a97f0b6a1dd234c02bc22f781926b43` finalized `MAJORITY_AGREE`. Canonical `a5` for `e7:r1` is `INCONCLUSIVE`, `PROVIDER_UNAVAILABLE`, `GITHUB_403_AMBIGUOUS`; this is an external validator-side GitHub limitation, not applicant failure.
+## Bounded retest conclusion
+
+The retest preserved the historical `MAJORITY_DISAGREE` and first `GITHUB_403_AMBIGUOUS` receipts without rebroadcasting them. A fresh minimal negative fixture completed correctly. A fresh minimal missing-file fixture, verified locally as repository/marker/documentation HTTP `200` with only the mapped implementation file HTTP `404`, still finalized as `GITHUB_403_AMBIGUOUS`. Local reachability is not evidence of validator reachability. No further semantic write was sent.
+## Provider investigation and escalation
+
+The supported Studio trace RPC (`gen_dbg_traceTransaction`) is unavailable for the failed transaction. The contract exposes no response headers or retained error bodies, and canonical `a7` contains neither a marker hash nor fingerprints. The only supported diagnosis is a pre-evidence validator-side GitHub `403`; the endpoint and cause remain unidentifiable. A tree-first missing-file optimization could remove the final Contents request after marker verification, but cannot solve this incident because marker verification never completed. It is therefore not a justified deployed-contract change. A maintainer escalation is prepared in `release-prep/GENLAYER_GITHUB_403_ESCALATION.md`.

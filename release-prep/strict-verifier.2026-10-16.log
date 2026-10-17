@@ -1,0 +1,9 @@
+file:///C:/Users/ojiku/.codex/worktrees/entrew-remediation/ENTREW_V1_BUILD_HANDOFF/release-prep/live-verify.mjs:307
+  if (review.marker_sha256 !== expectedMarkerHash) throw new Error(testCase.case_id + " marker hash mismatch.");
+                                                         ^
+
+Error: positive marker hash mismatch.
+    at file:///C:/Users/ojiku/.codex/worktrees/entrew-remediation/ENTREW_V1_BUILD_HANDOFF/release-prep/live-verify.mjs:307:58
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+Node.js v20.20.2

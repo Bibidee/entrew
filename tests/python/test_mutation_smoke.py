@@ -24,7 +24,14 @@ def load_mutant(old, new):
     mutated = SOURCE.replace(old, new, 1)
     tree = ast.parse(mutated)
     functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in HELPERS]
-    namespace = {"json": json, "hashlib": hashlib, "re": re, "MAX_EVIDENCE_FILES": 3, "MARKER_PATH": ".entrew/claim.json"}
+    namespace = {
+        "json": json,
+        "hashlib": hashlib,
+        "re": re,
+        "MAX_EVIDENCE_FILES": 3,
+        "MAX_PATH_SEGMENTS": 8,
+        "MARKER_PATH": ".entrew/claim.json",
+    }
     exec(compile(ast.Module(body=functions, type_ignores=[]), str(CONTRACT), "exec"), namespace)
     return namespace
 

@@ -13,7 +13,8 @@ PURE_HELPERS = {
     "_pairs_no_duplicates", "_strict_json", "_hash_text", "_canonical_repo",
     "_canonical_path", "_normalize_snapshot", "_snapshot_digest",
     "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body",
-    "_fetch_response", "_fetch_json", "_fetch_text", "_raw_url",
+    "_fetch_response", "_fetch_json", "_provider_issue_code", "_validate_source_content",
+    "_api_url", "_is_git_object_sha", "_git_tree_blob_binding",
 }
 TREE = ast.parse(CONTRACT.read_text(encoding="utf-8"))
 FUNCTIONS = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in PURE_HELPERS]
@@ -22,13 +23,13 @@ NAMESPACE = {
     "hashlib": hashlib,
     "re": re,
     "MAX_EVIDENCE_FILES": 3,
+    "MAX_PATH_SEGMENTS": 8,
     "MAX_FILE_CHARS": 12000,
     "MAX_TOTAL_CHARS": 24000,
     "MAX_RESPONSE_CHARS": 20000,
     "MARKER_PATH": ".entrew/claim.json",
     "GITHUB_API": "https://api.github.com",
-    "GITHUB_RAW": "https://raw.githubusercontent.com",
-    "ISSUE_CODES": ("NONE", "REPOSITORY_UNAVAILABLE", "REPOSITORY_IDENTITY_MISMATCH", "COMMIT_UNAVAILABLE", "COMMIT_IDENTITY_MISMATCH", "CLAIM_MARKER_MISSING", "CLAIM_MARKER_UNAVAILABLE", "CLAIM_MARKER_INVALID", "EVIDENCE_BUDGET_EXCEEDED", "VALIDATOR_OUTPUT_INVALID", "EVIDENCE_UNAVAILABLE"),
+    "ISSUE_CODES": ("NONE", "REPOSITORY_UNAVAILABLE", "REPOSITORY_IDENTITY_MISMATCH", "COMMIT_UNAVAILABLE", "COMMIT_IDENTITY_MISMATCH", "CLAIM_MARKER_MISSING", "CLAIM_MARKER_INVALID", "EVIDENCE_BUDGET_EXCEEDED", "VALIDATOR_OUTPUT_INVALID", "EVIDENCE_UNAVAILABLE", "GITHUB_RATE_LIMITED", "GITHUB_403_AMBIGUOUS", "PROVIDER_HTTP_ERROR", "PROVIDER_TRANSPORT_ERROR", "PROVIDER_TRANSIENT_FAILURE", "PROVIDER_REDIRECTED", "PROVIDER_RESPONSE_INVALID", "PROVIDER_RESPONSE_TOO_LARGE", "SOURCE_ENCODING_INVALID", "SOURCE_TOO_LARGE", "SOURCE_BINARY_INVALID", "SOURCE_FILE_UNAVAILABLE"),
 }
 exec(compile(ast.Module(body=FUNCTIONS, type_ignores=[]), str(CONTRACT), "exec"), NAMESPACE)
 FAKE_WEB = SimpleNamespace(response=None)
@@ -47,16 +48,112 @@ class ContractPolicyTests(unittest.TestCase):
         FAKE_WEB.response = SimpleNamespace(status=404, body=b"{}", url=url)
         self.assertEqual(fetch(url), {"availability": "HTTP_ERROR", "status": 404, "data": {}})
 
-        fetch_text = NAMESPACE["_fetch_text"]
-        raw_url = "https://raw.githubusercontent.com/example/registry/" + "a" * 40 + "/src/runtime.py"
-        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"def health(): return 'ok'", url=raw_url)
-        self.assertEqual(fetch_text(raw_url), {"availability": "OK", "status": 200, "body": "def health(): return 'ok'"})
 
+    def test_provider_failures_have_distinct_safe_classifications(self):
+        fetch = NAMESPACE["_fetch_response"]
+        issue = NAMESPACE["_provider_issue_code"]
+        url = "https://api.github.com/repos/example/registry"
+        for status, expected in [(429, "GITHUB_RATE_LIMITED"), (403, "GITHUB_403_AMBIGUOUS"), (503, "PROVIDER_TRANSIENT_FAILURE")]:
+            FAKE_WEB.response = SimpleNamespace(status_code=status, body=b"provider error", url=url)
+            response = fetch(url)
+            self.assertEqual(response["availability"], "HTTP_ERROR")
+            self.assertEqual(issue(response["availability"], response["status"]), expected)
+
+        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"ok", url="https://elsewhere.test/")
+        response = fetch(url)
+        self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_REDIRECTED")
+
+        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"\xff", url=url)
+        response = NAMESPACE["_fetch_json"](url)
+        self.assertEqual(response["availability"], "MALFORMED_JSON")
+        self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_RESPONSE_INVALID")
+        self.assertEqual(issue("SOURCE_ENCODING_INVALID"), "SOURCE_ENCODING_INVALID")
+
+        FAKE_WEB.response = SimpleNamespace(status_code=200, body=b"x" * 20001, url=url)
+        response = fetch(url)
+        self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_RESPONSE_TOO_LARGE")
+
+        FAKE_WEB.response = SimpleNamespace(status_code=200, body="not JSON", url=url)
+        malformed = NAMESPACE["_fetch_json"](url)
+        self.assertEqual(malformed["availability"], "MALFORMED_JSON")
+        self.assertEqual(issue(malformed["availability"], malformed["status"]), "PROVIDER_RESPONSE_INVALID")
+
+        original_get = FAKE_WEB.get
+        def fail_transport(url, headers):
+            raise OSError("temporary DNS failure")
+        FAKE_WEB.get = fail_transport
+        try:
+            response = fetch(url)
+            self.assertEqual(issue(response["availability"], response["status"]), "PROVIDER_TRANSPORT_ERROR")
+        finally:
+            FAKE_WEB.get = original_get
+
+    def test_source_file_character_and_binary_boundaries(self):
+        validate = NAMESPACE["_validate_source_content"]
+        issue = NAMESPACE["_provider_issue_code"]
+        self.assertEqual(validate("é" * 12000)["availability"], "OK")
+        too_large = validate("a" * 12001)
+        self.assertEqual(too_large["availability"], "SOURCE_TOO_LARGE")
+        self.assertEqual(issue(too_large["availability"]), "SOURCE_TOO_LARGE")
+        binary = validate("valid\x00binary")
+        self.assertEqual(binary["availability"], "SOURCE_BINARY_INVALID")
+        self.assertEqual(issue(binary["availability"]), "SOURCE_BINARY_INVALID")
     def test_repo_is_normalized_and_rejects_url_syntax(self):
         self.assertEqual(NAMESPACE["_canonical_repo"]("Example-Org", "Data_Set"), ("example-org", "data_set"))
         for owner, repo in [("owner@evil.test", "repo"), ("owner", "../repo"), ("owner", "repo?x=1"), ("..", "repo")]:
             with self.subTest(owner=owner, repo=repo), self.assertRaises(ValueError):
                 NAMESPACE["_canonical_repo"](owner, repo)
+
+    def test_repository_api_url_has_no_trailing_slash_and_routes_remain_exact(self):
+        api_url = NAMESPACE["_api_url"]
+        repository = "https://api.github.com/repos/bibidee/entrew-fixtures"
+        self.assertEqual(api_url("bibidee", "entrew-fixtures", ""), repository)
+        self.assertNotEqual(api_url("bibidee", "entrew-fixtures", ""), repository + "/")
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "git/commits/" + "a" * 40),
+            repository + "/git/commits/" + "a" * 40,
+        )
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "git/trees/" + "b" * 40),
+            repository + "/git/trees/" + "b" * 40,
+        )
+        self.assertEqual(
+            api_url("bibidee", "entrew-fixtures", "contents/.entrew/claim.json?ref=" + "c" * 40),
+            repository + "/contents/.entrew/claim.json?ref=" + "c" * 40,
+        )
+
+    def test_tree_binding_reuses_immutable_tree_response_within_one_review(self):
+        bind = NAMESPACE["_git_tree_blob_binding"]
+        root = "a" * 40
+        source = "b" * 40
+        first_blob = "c" * 40
+        second_blob = "d" * 40
+        responses = {
+            "https://api.github.com/repos/example/registry/git/trees/" + root: {
+                "sha": root, "truncated": False, "tree": [{"path": "src", "type": "tree", "sha": source}],
+            },
+            "https://api.github.com/repos/example/registry/git/trees/" + source: {
+                "sha": source, "truncated": False, "tree": [
+                    {"path": "first.py", "type": "blob", "sha": first_blob},
+                    {"path": "second.py", "type": "blob", "sha": second_blob},
+                ],
+            },
+        }
+        calls = []
+        original_get = FAKE_WEB.get
+
+        def counted_get(url, headers):
+            calls.append(url)
+            return SimpleNamespace(status_code=200, body=json.dumps(responses[url]), url=url)
+
+        FAKE_WEB.get = counted_get
+        try:
+            cache = {}
+            self.assertEqual(bind("example", "registry", root, "src/first.py", first_blob, cache)["availability"], "OK")
+            self.assertEqual(bind("example", "registry", root, "src/second.py", second_blob, cache)["availability"], "OK")
+            self.assertEqual(calls, list(responses))
+        finally:
+            FAKE_WEB.get = original_get
 
     def test_paths_reject_traversal_encoded_separators_and_arbitrary_hosts(self):
         canonical = NAMESPACE["_canonical_path"]
@@ -64,6 +161,9 @@ class ContractPolicyTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(ValueError):
                 canonical(path)
         self.assertEqual(canonical("src/parser.py"), "src/parser.py")
+        self.assertEqual(canonical("a/b/c/d/e/f/g/h"), "a/b/c/d/e/f/g/h")
+        with self.assertRaises(ValueError):
+            canonical("a/b/c/d/e/f/g/h/i")
 
     def test_snapshot_digest_ignores_path_and_mapping_order(self):
         digest = NAMESPACE["_snapshot_digest"]

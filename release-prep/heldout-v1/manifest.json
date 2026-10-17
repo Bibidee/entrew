@@ -1,0 +1,20 @@
+{
+  "benchmark_id": "entrew-heldout-semantic-v1",
+  "target_contract_source_sha256": "a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44",
+  "chain_id": 61999,
+  "evaluator_status": "NOT_CONFIGURED",
+  "live_scoring_status": "NOT_RUN",
+  "validator_disagreement_status": "NOT_AVAILABLE",
+  "input": "cases.json",
+  "answer_key": "answer-key.json",
+  "authored_but_not_independently_adjudicated": true,
+  "source_parent_pr_head": "f33b7d991e1b8c8c05c06e73e6de27c46a0eab5f",
+  "source_state": "consolidated_pr6_release_candidate",
+  "input_sha256": "8f1c41269bffb3e9bc7774711d966c785b67f03a8fbb1c41f0fda1ba85bad7ac",
+  "comparison_baseline": {
+    "path": "tests/benchmark/cases.json",
+    "sha256": "728f283d0d6c99e28fc71074c3c7973cc64c7fab376c1870a6c32bdb42fc604a",
+    "case_id_overlap": 0,
+    "rubric_path_mapping_overlap": 0
+  }
+}

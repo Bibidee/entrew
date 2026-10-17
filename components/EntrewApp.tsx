@@ -9,6 +9,7 @@ import { NETWORK } from "@/lib/network";
 import { reconcileActivity } from "@/lib/recovery";
 import { connectProvider, discoverWallets, providerChainId, switchToStudionet, type WalletOption } from "@/lib/wallet";
 import { normalizeEvidencePath, normalizeRepo, validateProgram, validateSnapshot } from "@/lib/validation";
+import { readConsistentPage } from "@/lib/pagination";
 import type { Criterion, Entry, Program, ReviewAttempt, Revision, WalletState } from "@/lib/types";
 
 type PageKey = "explorer" | "program" | "publish" | "apply" | "evidence" | "workspace" | "activity";
@@ -35,6 +36,12 @@ async function readRows<T>(method: string, args: unknown[]): Promise<T[]> {
   return decodeJson<T[]>(await readContract<unknown>(method, args));
 }
 
+function userFacingReadError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (/has not been deployed/i.test(message)) return "The public registry contract address is not configured yet.";
+  return "Could not load this record from the finalized Studionet registry. Check the connection and retry.";
+}
+
 function outcomeClass(value: string): string {
   if (value === "QUALIFIED" || value === "MET") return "success";
   if (value === "NOT_ESTABLISHED" || value === "NOT_MET") return "failure";
@@ -57,8 +64,9 @@ function CriteriaList({ criteria }: { criteria: Criterion[] }) {
   ))}</div>;
 }
 
-function EmptyState({ title, detail, action }: { title: string; detail: string; action?: ReactNode }) {
-  return <div className="empty-state"><div className="empty-icon" aria-hidden="true">⌁</div><h3>{title}</h3><p>{detail}</p>{action}</div>;
+function EmptyState({ title, detail, action, headingLevel = 3 }: { title: string; detail: string; action?: ReactNode; headingLevel?: 2 | 3 }) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
+  return <div className="empty-state"><div className="empty-icon" aria-hidden="true">⌁</div><Heading>{title}</Heading><p>{detail}</p>{action}</div>;
 }
 
 function ProgramCards({ programs, nowSeconds, emptyTitle = "No published programs yet" }: { programs: Program[]; nowSeconds: number | null; emptyTitle?: string }) {
@@ -91,6 +99,8 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [walletOptions, setWalletOptions] = useState<WalletOption[]>([]);
   const [walletModal, setWalletModal] = useState(false);
+  const walletModalRef = useRef<HTMLElement | null>(null);
+  const modalReturnFocus = useRef<HTMLElement | null>(null);
   const [walletError, setWalletError] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -98,7 +108,11 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   const connectionVersion = useRef(0);
   const loadVersion = useRef(0);
   const [query, setQuery] = useState<URLSearchParams | null>(null);
-  const [offset, setOffset] = useState(0);
+  const [explorerOffset, setExplorerOffset] = useState(0);
+  const [programApplicantOffset, setProgramApplicantOffset] = useState(0);
+  const [programQualifiedOffset, setProgramQualifiedOffset] = useState(0);
+  const [workspaceApplicationOffset, setWorkspaceApplicationOffset] = useState(0);
+  const [workspacePublicationOffset, setWorkspacePublicationOffset] = useState(0);
   const [reload, setReload] = useState(0);
   const [nowSeconds, setNowSeconds] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<LoadState>(page === "activity" ? "ready" : "loading");
@@ -156,7 +170,18 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   }, [page]);
 
   useEffect(() => {
-    setNowSeconds(Math.floor(Date.now() / 1000));
+    const refreshClock = () => {
+      if (document.visibilityState === "visible") setNowSeconds(Math.floor(Date.now() / 1000));
+    };
+    refreshClock();
+    const timer = window.setInterval(refreshClock, 1000);
+    window.addEventListener("focus", refreshClock);
+    document.addEventListener("visibilitychange", refreshClock);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshClock);
+      document.removeEventListener("visibilitychange", refreshClock);
+    };
   }, []);
 
   useEffect(() => {
@@ -207,13 +232,20 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     const run = async () => {
       setLoadError("");
       if (page === "activity") { setLoadState("ready"); return; }
+      if ((page === "program" || page === "apply" || page === "evidence") && !query) {
+        setLoadState("loading");
+        return;
+      }
       setLoadState("loading");
       try {
         if (page === "explorer") {
-          const count = await readCount("get_program_count");
-          const rows = count ? await readRows<Program>("get_programs_page", [offset, 25]) : [];
+          const result = await readConsistentPage(
+            () => readCount("get_program_count"),
+            (start, limit) => readRows<Program>("get_programs_page", [start, limit]),
+            explorerOffset,
+          );
           if (!current()) return;
-          setProgramCount(count); setPrograms(rows); setLoadState(count ? "ready" : "empty");
+          setProgramCount(result.count); setPrograms(result.rows); setLoadState(result.count ? "ready" : "empty");
           return;
         }
         if (page === "program" || page === "apply") {
@@ -222,14 +254,21 @@ export default function EntrewApp({ page }: { page: PageKey }) {
           if (!current()) return;
           setProgram(loaded);
           if (page === "program") {
-            const [applicants, rosterCount, applicantRows, qualifiedRows] = await Promise.all([
-              readCount("get_program_entry_count", [programId]),
-              readCount("get_program_qualified_count", [programId]),
-              readRows<Entry>("get_program_entries_page", [programId, offset, 25]),
-              readRows<Entry>("get_program_qualified_page", [programId, offset, 25]),
+            const [applicants, qualified] = await Promise.all([
+              readConsistentPage(
+                () => readCount("get_program_entry_count", [programId]),
+                (start, limit) => readRows<Entry>("get_program_entries_page", [programId, start, limit]),
+                programApplicantOffset,
+              ),
+              readConsistentPage(
+                () => readCount("get_program_qualified_count", [programId]),
+                (start, limit) => readRows<Entry>("get_program_qualified_page", [programId, start, limit]),
+                programQualifiedOffset,
+              ),
             ]);
             if (!current()) return;
-            setEntryCount(applicants); setQualifiedCount(rosterCount); setProgramEntries(applicantRows); setQualifiedEntries(qualifiedRows);
+            setEntryCount(applicants.count); setQualifiedCount(qualified.count);
+            setProgramEntries(applicants.rows); setQualifiedEntries(qualified.rows);
           }
           setLoadState("ready");
           return;
@@ -256,27 +295,34 @@ export default function EntrewApp({ page }: { page: PageKey }) {
         }
         if (page === "workspace") {
           if (!wallet) { setLoadState("ready"); return; }
-          const [pCount, eCount, pRows, eRows] = await Promise.all([
-            readCount("get_wallet_program_count", [wallet.address]),
-            readCount("get_wallet_entry_count", [wallet.address]),
-            readRows<Program>("get_wallet_programs_page", [wallet.address, 0, 25]),
-            readRows<Entry>("get_wallet_entries_page", [wallet.address, 0, 25]),
+          const [publications, applications] = await Promise.all([
+            readConsistentPage(
+              () => readCount("get_wallet_program_count", [wallet.address]),
+              (start, limit) => readRows<Program>("get_wallet_programs_page", [wallet.address, start, limit]),
+              workspacePublicationOffset,
+            ),
+            readConsistentPage(
+              () => readCount("get_wallet_entry_count", [wallet.address]),
+              (start, limit) => readRows<Entry>("get_wallet_entries_page", [wallet.address, start, limit]),
+              workspaceApplicationOffset,
+            ),
           ]);
           if (!current()) return;
-          setWalletProgramCount(pCount); setWalletEntryCount(eCount); setWalletPrograms(pRows); setWalletEntries(eRows); setLoadState("ready");
+          setWalletProgramCount(publications.count); setWalletEntryCount(applications.count);
+          setWalletPrograms(publications.rows); setWalletEntries(applications.rows); setLoadState("ready");
           return;
         }
         if (page === "publish") { setLoadState("ready"); return; }
       } catch (error) {
         if (!current()) return;
-        const message = error instanceof Error ? error.message : "A finalized contract read failed.";
-        if (message.includes("has not been deployed")) setLoadState("unconfigured");
-        else { setLoadError(message); setLoadState("error"); }
+        const rawMessage = error instanceof Error ? error.message : "";
+        if (rawMessage.includes("has not been deployed")) setLoadState("unconfigured");
+        else { setLoadError(userFacingReadError(error)); setLoadState("error"); }
       }
     };
     void run();
     return () => { cancelled = true; };
-  }, [page, offset, reload, programId, entryId, wallet]);
+  }, [page, explorerOffset, programApplicantOffset, programQualifiedOffset, workspaceApplicationOffset, workspacePublicationOffset, reload, query, programId, entryId, wallet]);
 
   const filteredPrograms = useMemo(() => programs.filter((item) => {
     const text = `${item.title} ${item.summary} ${item.description}`.toLowerCase();
@@ -285,6 +331,47 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     const matchesStatus = statusFilter === "all" || (statusFilter === "open" ? open : nowSeconds !== null && !open);
     return matchesText && matchesStatus;
   }), [programs, search, statusFilter, nowSeconds]);
+
+  function closeWalletModal() {
+    setWalletModal(false);
+    const target = modalReturnFocus.current;
+    if (target?.isConnected) window.requestAnimationFrame(() => target.focus());
+  }
+
+  useEffect(() => {
+    if (!walletModal) return;
+    const modal = walletModalRef.current;
+    const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusable = () => modal ? Array.from(modal.querySelectorAll<HTMLElement>(selector)) : [];
+    const items = focusable();
+    (items[0] || modal)?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeWalletModal();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const currentItems = focusable();
+      if (!currentItems.length) {
+        event.preventDefault();
+        modal?.focus();
+        return;
+      }
+      const first = currentItems[0];
+      const last = currentItems[currentItems.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !modal?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !modal?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [walletModal]);
 
   async function chooseWallet(option: WalletOption) {
     const version = ++connectionVersion.current;
@@ -295,6 +382,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       if (connectionVersion.current !== version) return;
       setWallet({ address, provider: option.provider, name: option.name, chainId });
       setWalletModal(false); setWalletOptions([]);
+      window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".header-actions .connect")?.focus());
       setNotice(chainId === NETWORK.id ? "Connected to Studionet. Public reads remain on the configured finalized RPC." : "Wallet connected on another network. Switch to Studionet before signing.");
     } catch (error) {
       if (connectionVersion.current === version) setWalletError(error instanceof Error ? error.message : "Wallet connection was rejected.");
@@ -309,7 +397,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       const options = await discoverWallets();
       if (!options.length) { setWalletError("No injected wallet was found. Install MetaMask or Rabby to sign writes; public browsing does not need a wallet."); return; }
       if (options.length === 1) await chooseWallet(options[0]);
-      else { setWalletOptions(options); setWalletModal(true); }
+      else { modalReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setWalletOptions(options); setWalletModal(true); }
     } catch (error) { setWalletError(error instanceof Error ? error.message : "Could not inspect injected wallets."); }
   }
 
@@ -505,7 +593,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     return <>
       {walletError && <div className="error-message" role="alert">{walletError}</div>}
       {actionError && <div className="error-message" role="alert">{actionError}</div>}
-      {loadState === "error" && loadError && <div className="error-message" role="alert">{loadError}</div>}
+      {loadState === "error" && loadError && <div className="error-message" role="alert">{loadError} <button className="button secondary" onClick={() => setReload((value) => value + 1)}>Retry read</button></div>}
       {notice && <div className={writeResult?.canonical ? "success-message" : "status-message"} role="status" aria-live="polite">{notice}</div>}
       {writeResult && <div className="panel" style={{ margin: "12px 0" }}>
         <div className="card-meta"><strong>{writeResult.phase.replaceAll("_", " ")}</strong><a className="hash" href={`${NETWORK.explorer}/tx/${writeResult.hash}`} target="_blank" rel="noreferrer">{shortHash(writeResult.hash)} ↗</a></div>
@@ -535,7 +623,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       {loadState === "ready" || loadState === "empty" ? <>
         <div className="search-row"><input className="control" aria-label="Search this page of programs" placeholder="Search programs on this page…" value={search} onChange={(event) => setSearch(event.target.value)} /><select className="control" aria-label="Filter program deadline" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All deadlines</option><option value="open">Open</option><option value="closed">Closed</option></select><span className="helper" style={{ alignSelf: "center" }}>Filter applies to this 25-record page.</span></div>
         {filteredPrograms.length ? <ProgramCards programs={filteredPrograms} nowSeconds={nowSeconds} /> : programs.length ? <EmptyState title="No match on this page" detail="Try another phrase or move to a different page. Search is limited to this finalized page." /> : <EmptyState title="No published programs yet" detail="When an organizer publishes to the configured registry, it will appear here. ENTREW never inserts sample programs." action={<Link className="button secondary" href="/publish">Publish the first program</Link>} />}
-        <div className="row-item" style={{ marginTop: 14 }}><span className="helper">Records {programCount ? offset + 1 : 0}–{Math.min(offset + programs.length, programCount)} of {programCount}</span><div style={{ display: "flex", gap: 8 }}><button className="button secondary" disabled={offset === 0 || busy} onClick={() => setOffset(Math.max(0, offset - 25))}>Previous</button><button className="button secondary" disabled={offset + 25 >= programCount || busy} onClick={() => setOffset(offset + 25)}>Next</button></div></div>
+        <div className="row-item" style={{ marginTop: 14 }}><span className="helper">Records {programCount ? explorerOffset + 1 : 0}–{Math.min(explorerOffset + programs.length, programCount)} of {programCount}</span><div style={{ display: "flex", gap: 8 }}><button className="button secondary" disabled={explorerOffset === 0 || busy} onClick={() => setExplorerOffset(Math.max(0, explorerOffset - 25))}>Previous</button><button className="button secondary" disabled={explorerOffset + 25 >= programCount || busy} onClick={() => setExplorerOffset(explorerOffset + 25)}>Next</button></div></div>
       </> : null}
       <section style={{ marginTop: 58 }}><div className="eyebrow"><span className="eyebrow-mark" />How independent review works</div><h2 style={{ marginTop: 10 }}>A clear path from rule to record.</h2><div className="explain-grid">
         <article className="explain-card"><div className="num">01</div><h3>Rubric, signed once</h3><p>Organizers publish two or three observable requirements with a fixed deadline. The published terms cannot be edited or graded by the organizer.</p></article>
@@ -550,6 +638,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     return <>
       <div className="eyebrow"><span className="eyebrow-mark" />Program profile · {program?.program_id || "reference missing"}</div>
       {sharedFeedback()}{loadingMessage()}
+      {!program && <section className="panel"><h1 className="record-empty-title">Program unavailable</h1><p className="helper">This program could not be loaded from the finalized registry.</p></section>}
       {program && <>
         <section style={{ padding: "25px 0 14px" }}><div className="card-meta"><span className="tag">Published rubric · v{program.schema_version}</span><span className={`tag ${nowSeconds === null ? "" : program.deadline > nowSeconds ? "success" : "warning"}`}>{nowSeconds === null ? "Checking deadline" : program.deadline > nowSeconds ? "Open for revisions" : "Deadline passed"}</span></div>
           <h1 style={{ maxWidth: 900, fontSize: "clamp(36px,5vw,60px)" }}>{program.title}</h1><p className="lede">{program.summary}</p><p style={{ maxWidth: 840, color: "#68718a", lineHeight: 1.75 }}>{program.description}</p>
@@ -560,7 +649,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
           <section className="panel"><div className="panel-title"><div><div className="eyebrow">Public records</div><h2 style={{ marginTop: 7 }}>{programTab === "qualified" ? "Qualification roster" : "Applicant history"}</h2><p>{programTab === "qualified" ? `${qualifiedCount} finalized qualified entries` : `${entryCount} entries on the public index`}</p></div></div>
             <div className="tabs" role="tablist" aria-label="Program records"><button className="tab" role="tab" aria-selected={programTab === "qualified"} onClick={() => setProgramTab("qualified")}>Qualified</button><button className="tab" role="tab" aria-selected={programTab === "applicants"} onClick={() => setProgramTab("applicants")}>Applicants</button></div>
             <div className="row-list" style={{ marginTop: 12 }}>{(programTab === "qualified" ? qualifiedEntries : programEntries).length ? (programTab === "qualified" ? qualifiedEntries : programEntries).map((candidate) => <Link className="row-item" key={candidate.entry_id} href={`/evidence?entry=${encodeURIComponent(candidate.entry_id)}`}><div><strong>{candidate.owner}/{candidate.repo}</strong><p>{candidate.entry_id} · wallet {shortAddress(candidate.applicant)}</p></div><OutcomeTag value={candidate.current_result} /></Link>) : <EmptyState title={programTab === "qualified" ? "No finalized qualification yet" : "No applications yet"} detail="This view uses the contract index. It will remain empty until an applicant&apos;s record is written." />}</div>
-            <div className="row-item"><span className="helper">Offset {offset} · page size 25</span><div style={{ display: "flex", gap: 7 }}><button className="button secondary" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 25))}>Previous</button><button className="button secondary" disabled={offset + 25 >= (programTab === "qualified" ? qualifiedCount : entryCount)} onClick={() => setOffset(offset + 25)}>Next</button></div></div>
+            <div className="row-item"><span className="helper">Records {programTab === "qualified" ? (qualifiedCount ? programQualifiedOffset + 1 : 0) : (entryCount ? programApplicantOffset + 1 : 0)}–{programTab === "qualified" ? Math.min(programQualifiedOffset + qualifiedEntries.length, qualifiedCount) : Math.min(programApplicantOffset + programEntries.length, entryCount)} of {programTab === "qualified" ? qualifiedCount : entryCount}</span><div style={{ display: "flex", gap: 7 }}><button className="button secondary" disabled={(programTab === "qualified" ? programQualifiedOffset : programApplicantOffset) === 0} onClick={() => programTab === "qualified" ? setProgramQualifiedOffset(Math.max(0, programQualifiedOffset - 25)) : setProgramApplicantOffset(Math.max(0, programApplicantOffset - 25))}>Previous</button><button className="button secondary" disabled={programTab === "qualified" ? programQualifiedOffset + 25 >= qualifiedCount : programApplicantOffset + 25 >= entryCount} onClick={() => programTab === "qualified" ? setProgramQualifiedOffset(programQualifiedOffset + 25) : setProgramApplicantOffset(programApplicantOffset + 25)}>Next</button></div></div>
           </section></div>
         <section className="panel" style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 15 }}><div><h3 style={{ marginBottom: 5 }}>Have a revision that fits?</h3><p className="helper" style={{ margin: 0 }}>Prepare the public marker and pinned files before submitting.</p></div><Link className="button" href={`/apply?program=${encodeURIComponent(program.program_id)}`} aria-disabled={nowSeconds === null || program.deadline <= nowSeconds} onClick={(event) => { if (nowSeconds === null || program.deadline <= nowSeconds) event.preventDefault(); }}>{nowSeconds !== null && program.deadline > nowSeconds ? "Open Evidence Studio →" : nowSeconds === null ? "Checking deadline" : "Program closed"}</Link></section>
         <section style={{ marginTop: 25 }} className="helper">Organizer <span className="hash">{program.organizer}</span> · terms SHA-256 <span className="hash">{program.terms_digest}</span></section>
@@ -623,6 +712,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   function applyPage() {
     return <div className="page narrow">
       {sharedFeedback()}{loadingMessage()}
+      {!program && <section className="panel"><h1 className="record-empty-title">Program unavailable</h1><p className="helper">This program could not be loaded from the finalized registry.</p></section>}
       {program && <><div className="eyebrow"><span className="eyebrow-mark" />Evidence Studio · {program.program_id}</div><h1 style={{ fontSize: "clamp(35px,5vw,54px)" }}>Build a revision<br />the rules can read.</h1><p className="lede">{program.title}</p>
         {nowSeconds !== null && program.deadline <= nowSeconds ? <EmptyState title="This program is closed" detail={`Its deadline was ${formatDate(program.deadline)}. The contract enforces the cutoff.`} /> : <div className="split-layout" style={{ marginTop: 25 }}><section className="panel"><div className="panel-title"><div><div className="eyebrow">Fixed rubric</div><h2 style={{ marginTop: 7 }}>What validators will assess</h2></div></div><CriteriaList criteria={program.criteria} /><div className="callout blue" style={{ marginTop: 15 }}>This side of the workbench reads only the published terms. Your revision cannot edit them.</div></section><div>{evidenceComposer(false)}</div></div>}
       </>}
@@ -633,6 +723,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     return <div className="panel" key={candidate.attempt_id}>
       <div className="panel-title"><div><span className="eyebrow">Attempt {candidate.attempt_id} · {formatDate(candidate.assessed_at)}</span><h3 style={{ marginTop: 7 }}>Decision anatomy</h3></div><OutcomeTag value={candidate.outcome} /></div>
       <div className="callout blue">Provenance <strong>{candidate.provenance.replaceAll("_", " ")}</strong> · issue <span className="hash">{candidate.issue_code}</span> · review rules v{candidate.review_version}</div>
+      {candidate.outcome === "INCONCLUSIVE" && candidate.provenance === "PROVIDER_UNAVAILABLE" && candidate.issue_code === "GITHUB_403_AMBIGUOUS" && <div className="callout" style={{ marginTop: 10 }}>Evidence could not be verified because GitHub is temporarily unavailable to the validator. No eligibility decision was made.</div>}
       <div className="anatomy-list" style={{ marginTop: 9 }}>{candidate.criteria.map((row) => {
         const criterion = program?.criteria[row.index];
         return <article className="anatomy" key={`${candidate.attempt_id}-${row.index}`}><span className="index">C{row.index + 1}</span><div><h3>{criterion?.key || `Criterion ${row.index + 1}`}</h3><p>{criterion?.requirement || "Criterion text unavailable from current program read."}</p><p style={{ marginTop: 8 }}>{row.explanation || "No explanation was stored for this criterion."}</p><div className="source-list">{row.evidence_paths.map((path) => <span className="source-chip" key={path}>{path}</span>)}{!row.evidence_paths.length && <span className="source-chip">No bound file citation</span>}</div></div><OutcomeTag value={row.status} /></article>;
@@ -674,10 +765,11 @@ export default function EntrewApp({ page }: { page: PageKey }) {
 
   function workspacePage() {
     return <div className="page narrow"><div className="eyebrow"><span className="eyebrow-mark" />Wallet workspace</div><h1 style={{ fontSize: "clamp(36px,5vw,58px)" }}>Your on-chain<br />program record.</h1><p className="lede">Organizer publications and applicant entries are separate, paginated views from the current wallet.</p>{sharedFeedback()}{loadingMessage()}
-      {!wallet && <EmptyState title="Connect a wallet to see your workspace" detail="Public program pages and decision records remain readable without a wallet." action={<button className="button" onClick={() => void openWalletPicker()}>Connect wallet</button>} />}
+      {!wallet && <EmptyState title="Connect a wallet to see your workspace" detail="Public program pages and decision records remain readable without a wallet." action={<button className="button" onClick={() => void openWalletPicker()}>Connect wallet</button>} headingLevel={2} />}
       {wallet && (loadState === "ready" || loadState === "empty") && <><div className="callout blue">Connected as <span className="hash">{wallet.address}</span>. Wallet signatures do not establish person-level identity. No cross-wallet applicant matching is performed.</div><div className="panel" style={{ marginTop: 18 }}><div className="tabs" role="tablist" aria-label="Workspace records"><button className="tab" role="tab" aria-selected={workspaceTab === "applications"} onClick={() => setWorkspaceTab("applications")}>Applications · {walletEntryCount}</button><button className="tab" role="tab" aria-selected={workspaceTab === "publications"} onClick={() => setWorkspaceTab("publications")}>Publications · {walletProgramCount}</button></div>
-        {workspaceTab === "applications" ? walletEntries.length ? <div className="row-list">{walletEntries.map((item) => <Link className="row-item" key={item.entry_id} href={`/evidence?entry=${encodeURIComponent(item.entry_id)}`}><div><strong>{item.owner}/{item.repo}</strong><p>{item.entry_id} · program {item.program_id} · {item.revision_count} revision(s)</p></div><OutcomeTag value={item.current_result} /></Link>)}</div> : <EmptyState title="No applications from this wallet" detail="Your entries will appear after a finalized canonical submission." action={<Link className="button secondary" href="/">Browse programs</Link>} />
-          : walletPrograms.length ? <div className="row-list">{walletPrograms.map((item) => <Link className="row-item" key={item.program_id} href={`/program?ref=${encodeURIComponent(item.program_id)}`}><div><strong>{item.title}</strong><p>{item.program_id} · deadline {formatDate(item.deadline)}</p></div><span className="hash">{item.terms_digest.slice(0,14)}…</span></Link>)}</div> : <EmptyState title="No programs published by this wallet" detail="A published rubric remains immutable and has no applicant verdict controls." action={<Link className="button secondary" href="/publish">Publish a program</Link>} />}
+        {workspaceTab === "applications" ? walletEntries.length ? <div className="row-list">{walletEntries.map((item) => <Link className="row-item" key={item.entry_id} href={`/evidence?entry=${encodeURIComponent(item.entry_id)}`}><div><strong>{item.owner}/{item.repo}</strong><p>{item.entry_id} · program {item.program_id} · {item.revision_count} revision(s)</p></div><OutcomeTag value={item.current_result} /></Link>)}</div> : <EmptyState title="No applications from this wallet" detail="Your entries will appear after a finalized canonical submission." action={<Link className="button secondary" href="/">Browse programs</Link>} headingLevel={2} />
+          : walletPrograms.length ? <div className="row-list">{walletPrograms.map((item) => <Link className="row-item" key={item.program_id} href={`/program?ref=${encodeURIComponent(item.program_id)}`}><div><strong>{item.title}</strong><p>{item.program_id} · deadline {formatDate(item.deadline)}</p></div><span className="hash">{item.terms_digest.slice(0,14)}…</span></Link>)}</div> : <EmptyState title="No programs published by this wallet" detail="A published rubric remains immutable and has no applicant verdict controls." action={<Link className="button secondary" href="/publish">Publish a program</Link>} headingLevel={2} />}
+        <div className="row-item"><span className="helper">Records {workspaceTab === "applications" ? (walletEntryCount ? workspaceApplicationOffset + 1 : 0) : (walletProgramCount ? workspacePublicationOffset + 1 : 0)}–{workspaceTab === "applications" ? Math.min(workspaceApplicationOffset + walletEntries.length, walletEntryCount) : Math.min(workspacePublicationOffset + walletPrograms.length, walletProgramCount)} of {workspaceTab === "applications" ? walletEntryCount : walletProgramCount}</span><div style={{ display: "flex", gap: 7 }}><button className="button secondary" disabled={(workspaceTab === "applications" ? workspaceApplicationOffset : workspacePublicationOffset) === 0} onClick={() => workspaceTab === "applications" ? setWorkspaceApplicationOffset(Math.max(0, workspaceApplicationOffset - 25)) : setWorkspacePublicationOffset(Math.max(0, workspacePublicationOffset - 25))}>Previous</button><button className="button secondary" disabled={workspaceTab === "applications" ? workspaceApplicationOffset + 25 >= walletEntryCount : workspacePublicationOffset + 25 >= walletProgramCount} onClick={() => workspaceTab === "applications" ? setWorkspaceApplicationOffset(workspaceApplicationOffset + 25) : setWorkspacePublicationOffset(workspacePublicationOffset + 25)}>Next</button></div></div>
         </div></>}
     </div>;
   }
@@ -688,7 +780,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       {activityRecords.length ? <div className="panel" style={{ marginTop: 18 }}>{activityRecords.map((record) => {
         const result = activityResults[record.hash];
         return <article className="row-item" key={record.hash} style={{ alignItems: "start" }}><div style={{ minWidth: 0, flex: 1 }}><div className="card-meta"><strong>{record.operation.replaceAll("_", " ")}</strong><span>{new Date(record.submittedAt).toLocaleString()}</span></div><a className="hash" href={`${NETWORK.explorer}/tx/${record.hash}`} target="_blank" rel="noreferrer">{record.hash} ↗</a><p className="hash">{record.signer} · chain {record.chainId} · contract {record.contractAddress}</p>{result && <div className="status-message" role="status"><strong>{result.label}</strong><br />{result.detail}</div>}</div><button className="button secondary" disabled={recoveringHash === record.hash} onClick={() => void recover(record)}>{recoveringHash === record.hash ? <><span className="spinner" /> Checking…</> : "Reconcile"}</button></article>;
-      })}</div> : <EmptyState title="No submitted hashes in this browser" detail="After a wallet submits a transaction, ENTREW stores its hash for recovery. The chain remains the source of truth." />}
+      })}</div> : <EmptyState title="No submitted hashes in this browser" detail="After a wallet submits a transaction, ENTREW stores its hash for recovery. The chain remains the source of truth." headingLevel={2} />}
       <div className="callout" style={{ marginTop: 16 }}>Changing wallets does not delete a transaction or make the provider disconnect. An unknown hash stays recoverable; ENTREW never rebroadcasts it automatically.</div>
     </div>;
   }
@@ -711,6 +803,6 @@ export default function EntrewApp({ page }: { page: PageKey }) {
     </div></div></header>
     <main>{mainContent()}</main>
     <footer className="footer"><div className="footer-inner"><span><strong>entrew.</strong> Evidence Atlas for developer programs.</span><span>One contract · Studionet 61999 · Public GitHub evidence</span><span>Wallet address is not a person identity.</span></div></footer>
-    {walletModal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setWalletModal(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="wallet-heading"><div className="panel-title"><div><div className="eyebrow">Wallet selection</div><h2 id="wallet-heading">Choose a signing wallet</h2></div><button className="button ghost" onClick={() => setWalletModal(false)} aria-label="Close wallet selection">×</button></div><p>Public reads do not use this wallet. It signs only the action you submit.</p>{walletOptions.map((option) => <button className="wallet-choice" key={option.id} disabled={connecting} onClick={() => void chooseWallet(option)}><span className="wallet-icon">◇</span><span>{option.name}</span></button>)}{walletError && <div className="error-message" role="alert">{walletError}</div>}</section></div>}
+    {walletModal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeWalletModal(); }}><section ref={walletModalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="wallet-heading" tabIndex={-1}><div className="panel-title"><div><div className="eyebrow">Wallet selection</div><h2 id="wallet-heading">Choose a signing wallet</h2></div><button className="button ghost" onClick={closeWalletModal} aria-label="Close wallet selection">×</button></div><p>Public reads do not use this wallet. It signs only the action you submit.</p>{walletOptions.map((option) => <button className="wallet-choice" key={option.id} disabled={connecting} onClick={() => void chooseWallet(option)}><span className="wallet-icon">◇</span><span>{option.name}</span></button>)}{walletError && <div className="error-message" role="alert">{walletError}</div>}</section></div>}
   </div>;
 }

@@ -1,5 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+const configuredContract = process.env.NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS?.trim();
+const configuredProgramTitle = process.env.E2E_EXPECTED_PROGRAM_TITLE?.trim() || "Optimized evidence idempotency verification";
 
 const publicRoutes = [
   "/",
@@ -11,7 +14,22 @@ const publicRoutes = [
   "/activity",
 ];
 
+async function waitForFinalizedRead(page: Page, locator: Locator) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await expect(locator).toBeVisible({ timeout: 30_000 });
+      return;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      const retry = page.getByRole("button", { name: "Retry read" });
+      await expect(retry).toBeVisible();
+      await retry.click();
+    }
+  }
+}
+
 test("all static query-ID routes render useful unconfigured states", async ({ page }) => {
+  test.skip(Boolean(configuredContract), "This test covers the intentionally unconfigured registry only.");
   test.setTimeout(60_000);
   for (const route of publicRoutes) {
     await page.goto(route);
@@ -26,38 +44,47 @@ test("all static query-ID routes render useful unconfigured states", async ({ pa
 });
 
 test("public explorer shows no invented registry rows while unconfigured", async ({ page }) => {
+  test.skip(Boolean(configuredContract), "This test covers the intentionally unconfigured registry only.");
   await page.goto("/");
   await expect(page.getByText(/No programs or counts are shown until a real Studionet deployment is integrated/i)).toBeVisible();
   await expect(page.locator(".program-card")).toHaveCount(0);
   await expect(page.getByText(/published in finalized contract state/)).toHaveCount(0);
 });
 
-test("narrow and desktop viewports do not overflow horizontally", async ({ page }) => {
+test("configured registry reads the corrected contract's finalized program", async ({ page }) => {
+  test.skip(!configuredContract, "Set NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS to run this isolated live-contract check.");
+  test.setTimeout(180_000);
+  await page.goto("/");
+  await waitForFinalizedRead(page, page.getByText("1 published in finalized contract state"));
+  const program = page.getByRole("link", { name: configuredProgramTitle });
+  await expect(program).toBeVisible();
+  await program.click();
+  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: configuredProgramTitle }));
+});
+
+test("all routes fit every requested viewport", async ({ page }) => {
   for (const width of [320, 375, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/");
-    const dimensions = await page.evaluate(() => ({ document: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
-    expect(dimensions.document, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(dimensions.viewport + 1);
+    for (const route of publicRoutes) {
+      await page.goto(route);
+      const dimensions = await page.evaluate(() => ({ document: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+      expect(dimensions.document, route + " has horizontal overflow at " + width + "px").toBeLessThanOrEqual(dimensions.viewport + 1);
+    }
   }
 });
 
-test("explorer has no automated accessibility violations", async ({ page }) => {
-  await page.goto("/");
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(
-    results.violations.map(({ id, impact, nodes }) => ({
+test("every route has no automated accessibility violations", async ({ page }) => {
+  for (const route of publicRoutes) {
+    await page.goto(route);
+    if (route.startsWith("/evidence")) await expect(page.getByRole("heading", { level: 1 })).toHaveText("Evidence record unavailable");
+    if (route.startsWith("/program")) await expect(page.getByRole("heading", { level: 1 })).toHaveText("Program unavailable");
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations.map(({ id, impact, nodes }) => ({
       id,
       impact,
       targets: nodes.map(({ target }) => target.join(" ")),
-    })),
-  ).toEqual([]);
-});
-
-test("evidence query route has a level-one heading and no accessibility violations", async ({ page }) => {
-  await page.goto("/evidence?entry=e999");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Evidence record unavailable");
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.map(({ id }) => id)).toEqual([]);
+    })), route).toEqual([]);
+  }
 });
 
 test("MetaMask and Rabby can be selected independently and switch to exact Studionet", async ({ page }) => {
@@ -79,8 +106,20 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
     Object.defineProperty(window, "ethereum", { configurable: true, value: { providers: [makeProvider("metamask"), makeProvider("rabby")] } });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Connect wallet" }).click();
-  await expect(page.getByRole("dialog", { name: /Choose a signing wallet/i })).toBeVisible();
+  const connectButton = page.getByRole("button", { name: "Connect wallet" });
+  await connectButton.click();
+  const dialog = page.getByRole("dialog", { name: /Choose a signing wallet/i });
+  await expect(dialog).toBeVisible();
+  const closeButton = page.getByRole("button", { name: "Close wallet selection" });
+  const walletChoices = dialog.getByRole("button", { name: /MetaMask|Rabby/ });
+  await expect(closeButton).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(walletChoices.last()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(connectButton).toBeFocused();
+  await connectButton.click();
+  await expect(dialog).toBeVisible();
   await page.getByRole("button", { name: /Rabby/ }).click();
   await expect(page.getByRole("button", { name: "Switch network" })).toBeVisible();
   await page.getByRole("button", { name: "Switch network" }).click();

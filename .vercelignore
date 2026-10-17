@@ -1,0 +1,17 @@
+# Generated, local-only, and release-preparation material must not enter a CLI upload.
+node_modules/
+.venv/
+.next/
+out/
+coverage/
+.pytest_cache/
+artifacts/
+*.tsbuildinfo
+playwright-report/
+test-results/
+__pycache__/
+*.pyc
+.env
+.env.local
+.env.*.local
+release-prep/

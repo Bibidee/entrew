@@ -2,7 +2,7 @@
 
 ENTREW is a backendless public review registry for developer programs. Organizers publish immutable two- or three-criterion requirements and deadlines. Applicants submit a public GitHub repository, full commit SHA, bounded evidence paths, and a same-revision `.entrew/claim.json` marker. GenLayer validators independently retrieve and assess the bounded evidence. A contract outcome is only visible after finalized successful execution and canonical state readback.
 
-The V1 registry is deployed on GenLayer Studionet and the production frontend is live at [the-entrew.vercel.app](https://the-entrew.vercel.app). A real positive and negative fixture lifecycle has been executed and read back from canonical contract state. See [deployment evidence](docs/DEPLOYMENT.md) and [validation results](docs/TEST_RESULTS.md). The checked-in `.env.example` intentionally contains no live address; configure the address only in the intended deployment environment.
+The historical production frontend remains live at [the-entrew.vercel.app](https://the-entrew.vercel.app) on its preserved contract address. The current remediation source is separately deployed and source-attested on Studionet at `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` (SHA-256 `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44`). It has conclusive initial-negative, corrected-qualified, and independent-qualified lifecycle evidence. Production configuration has not changed. The current release decision and known live-matrix limitations are in [the final release verification](release-prep/FINAL_RELEASE_VERIFICATION.md).
 
 ## Source layout
 
@@ -24,7 +24,7 @@ Install the pinned JavaScript and Python test dependencies, then run:
 
 ```powershell
 npm ci
-python -m pip install -r requirements-test.txt
+py -3.13 -m pip install -r requirements-test.txt
 npx playwright install chromium
 npm run cli:local-version
 npm run network:check
@@ -33,10 +33,12 @@ npm run test:e2e
 npm audit
 ```
 
+The Direct Mode test dependency requires Python 3.12 or newer. On Windows, use the Python launcher with a compatible version as shown above.
+
 `npm run check` runs typecheck, lint, source tests, Python policy and mutation tests, Direct Mode contract tests, and the static production build. `npm run test:e2e` covers browser routes, responsiveness, wallet selection and accessibility in test configurations. Mock-wallet checks do not establish live wallet behavior; current live evidence and pending checks are called out in the validation record.
 
 ## Configuration
 
-Production is configured with `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`, chain ID `61999`, and RPC `https://studio.genlayer.com/api`. The contract address is public configuration, not a secret. Static export writes to `out/`; verify direct reload of query-ID routes when making a frontend release.
+The preserved production environment uses `NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS=0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`. The separately verified remediation contract is `0xf365B36251a734B19d5E56A09AE54bD503fbcC31`; use it only in an isolated local or preview environment until production release is approved. Both use chain ID `61999` and RPC `https://studio.genlayer.com/api`. The contract address is public configuration, not a secret.
 
 See [deployment evidence](docs/DEPLOYMENT.md), [security limits](docs/SECURITY.md), and [test results](docs/TEST_RESULTS.md).

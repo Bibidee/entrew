@@ -1,13 +1,13 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
-import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
+import { ExecutionResult, TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import { assertPinnedSdkNetwork, configuredContract, NETWORK } from "./network";
 import { rememberSubmitted } from "./activity";
 import type { Eip1193Provider } from "./types";
 
 type FeeEstimate = { distribution?: unknown; feeValue?: unknown };
 type RuntimeClient = {
-  readContract(args: { address: `0x${string}`; functionName: string; args: unknown[]; stateStatus: "finalized" }): Promise<unknown>;
+  readContract(args: { address: `0x${string}`; functionName: string; args: unknown[]; transactionHashVariant: typeof TransactionHashVariant.LATEST_FINAL }): Promise<unknown>;
   estimateTransactionFeesForWrite?: (args: { account: `0x${string}`; address: `0x${string}`; functionName: string; args: unknown[]; value: bigint }) => Promise<FeeEstimate>;
   writeContract(args: { address: `0x${string}`; functionName: string; args: unknown[]; value: bigint; fees?: { distribution?: unknown; feeValue?: unknown } }): Promise<`0x${string}`>;
   waitForTransactionReceipt(args: { hash: `0x${string}`; status: typeof TransactionStatus.FINALIZED; fullTransaction: boolean }): Promise<{ txExecutionResultName?: unknown }>;
@@ -40,8 +40,7 @@ export async function readContract<T>(functionName: string, args: unknown[] = []
     address,
     functionName,
     args,
-    // genlayer-js 1.1.8 uses stateStatus; do not substitute v2 TransactionHashVariant.
-    stateStatus: "finalized",
+    transactionHashVariant: TransactionHashVariant.LATEST_FINAL,
   });
   return result as T;
 }
