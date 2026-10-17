@@ -329,19 +329,27 @@ def _is_git_object_sha(value):
     return isinstance(value, str) and re.fullmatch(r"[0-9a-fA-F]{40}", value) is not None
 
 
-def _git_tree_blob_binding(owner, repo_name, root_tree_sha, expected_path, expected_blob_sha):
+def _git_tree_blob_binding(owner, repo_name, root_tree_sha, expected_path, expected_blob_sha, tree_cache=None):
     # Contents API bytes are decision-bearing only when their blob SHA is an
     # entry at the requested path in the exact commit's tree. Traverse only
     # the bounded, canonical path; a malformed or inconsistent tree fails
     # closed as an invalid provider response.
     if not _is_git_object_sha(root_tree_sha) or not _is_git_object_sha(expected_blob_sha):
         return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
+    if tree_cache is None:
+        tree_cache = {}
     current_tree_sha = root_tree_sha.lower()
     parts = expected_path.split("/")
     if len(parts) > MAX_PATH_SEGMENTS:
         return {"availability": "INVALID_RESPONSE", "status": 200, "data": {}}
     for index, part in enumerate(parts):
-        result = _fetch_json(_api_url(owner, repo_name, "git/trees/" + current_tree_sha))
+        result = tree_cache.get(current_tree_sha)
+        if result is None:
+            result = _fetch_json(_api_url(owner, repo_name, "git/trees/" + current_tree_sha))
+            # A tree SHA names immutable Git object bytes. Keeping this cache
+            # within one exact-revision review removes only repeated reads of
+            # that same object; every path still validates its own tree entry.
+            tree_cache[current_tree_sha] = result
         if result["availability"] != "OK":
             return result
         data = result["data"]
@@ -423,7 +431,8 @@ def _review_snapshot_source(snapshot_json, criteria_json):
     marker_bytes = _decode_github_contents_file(marker_result["data"], MARKER_PATH)
     if marker_bytes is None:
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", "PROVIDER_RESPONSE_INVALID", full_repo, commit_sha)
-    marker_tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, MARKER_PATH, marker_result["data"].get("sha"))
+    tree_cache = {}
+    marker_tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, MARKER_PATH, marker_result["data"].get("sha"), tree_cache)
     if marker_tree_binding["availability"] != "OK":
         return _unverifiable(criteria, "PROVIDER_UNAVAILABLE", _provider_issue_code(marker_tree_binding["availability"], marker_tree_binding["status"]), full_repo, commit_sha)
     try:
@@ -483,7 +492,7 @@ def _review_snapshot_source(snapshot_json, criteria_json):
             path_classifications[path] = "INVALID_RESPONSE"
             unavailable_issue_codes.append("PROVIDER_RESPONSE_INVALID")
             continue
-        tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, path, result["data"].get("sha"))
+        tree_binding = _git_tree_blob_binding(owner, repo_name, root_tree_sha, path, result["data"].get("sha"), tree_cache)
         if tree_binding["availability"] != "OK":
             unavailable_paths.add(path)
             path_classifications[path] = "PROVIDER_UNAVAILABLE"

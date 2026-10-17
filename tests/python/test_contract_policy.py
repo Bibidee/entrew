@@ -14,7 +14,7 @@ PURE_HELPERS = {
     "_canonical_path", "_normalize_snapshot", "_snapshot_digest",
     "_aggregate_outcome", "_validate_criterion_vector", "_validate_review_record", "_read_body",
     "_fetch_response", "_fetch_json", "_provider_issue_code", "_validate_source_content",
-    "_api_url",
+    "_api_url", "_is_git_object_sha", "_git_tree_blob_binding",
 }
 TREE = ast.parse(CONTRACT.read_text(encoding="utf-8"))
 FUNCTIONS = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in PURE_HELPERS]
@@ -121,6 +121,39 @@ class ContractPolicyTests(unittest.TestCase):
             api_url("bibidee", "entrew-fixtures", "contents/.entrew/claim.json?ref=" + "c" * 40),
             repository + "/contents/.entrew/claim.json?ref=" + "c" * 40,
         )
+
+    def test_tree_binding_reuses_immutable_tree_response_within_one_review(self):
+        bind = NAMESPACE["_git_tree_blob_binding"]
+        root = "a" * 40
+        source = "b" * 40
+        first_blob = "c" * 40
+        second_blob = "d" * 40
+        responses = {
+            "https://api.github.com/repos/example/registry/git/trees/" + root: {
+                "sha": root, "truncated": False, "tree": [{"path": "src", "type": "tree", "sha": source}],
+            },
+            "https://api.github.com/repos/example/registry/git/trees/" + source: {
+                "sha": source, "truncated": False, "tree": [
+                    {"path": "first.py", "type": "blob", "sha": first_blob},
+                    {"path": "second.py", "type": "blob", "sha": second_blob},
+                ],
+            },
+        }
+        calls = []
+        original_get = FAKE_WEB.get
+
+        def counted_get(url, headers):
+            calls.append(url)
+            return SimpleNamespace(status_code=200, body=json.dumps(responses[url]), url=url)
+
+        FAKE_WEB.get = counted_get
+        try:
+            cache = {}
+            self.assertEqual(bind("example", "registry", root, "src/first.py", first_blob, cache)["availability"], "OK")
+            self.assertEqual(bind("example", "registry", root, "src/second.py", second_blob, cache)["availability"], "OK")
+            self.assertEqual(calls, list(responses))
+        finally:
+            FAKE_WEB.get = original_get
 
     def test_paths_reject_traversal_encoded_separators_and_arbitrary_hosts(self):
         canonical = NAMESPACE["_canonical_path"]

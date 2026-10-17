@@ -9,7 +9,7 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const contractPath = resolve(root, "contracts/entrew_registry.py");
 const source = await readFile(contractPath);
 const expectedHash = createHash("sha256").update(source).digest("hex");
-const reviewedHash = "b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8";
+const reviewedHash = "a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44";
 if (expectedHash !== reviewedHash) {
   console.error(`Refusing deployment: source SHA-256 ${expectedHash} does not match the reviewed bytes ${reviewedHash}.`);
   process.exit(1);

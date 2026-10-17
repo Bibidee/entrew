@@ -7,8 +7,9 @@ records; this preflight must not be used to replace or mutate them.
 | Item | Value |
 | --- | --- |
 | Network | Studionet `61999` (`https://studio.genlayer.com/api`) |
-| Candidate SHA-256 | `b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8` |
-| Candidate Git blob ID | `ec4b5bd4aa453b73987d732986191670b580ab98` |
+| Existing deployed SHA-256 | `b81379bfa8b1b438381647c91c611999e55440d1edab6c0176d9e52fc2c4a5d8` |
+| Candidate SHA-256 | `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44` |
+| Candidate Git blob ID | `7e699224bbbd77e0b60d1364a592ebe49332ba84` |
 | Required local CLI | repository-local GenLayer `0.39.1` |
 
 `npm run deploy:studionet` verifies the exact source bytes, runs the chain
