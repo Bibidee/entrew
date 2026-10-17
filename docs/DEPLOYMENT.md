@@ -1,6 +1,16 @@
 # Deployment record and runbook
 
-## Remediation branch and verified test deployment
+## Current release target — 2026-10-17
+
+- Release contract: `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` on Studionet `61999`.
+- Exact deployed source: SHA-256 `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44`; Git blob `7e699224bbbd77e0b60d1364a592ebe49332ba84`.
+- Deployment transaction: `0xf26389f61139ebc079e4da0b1512aee882d229346546a896fe250b18a38853ad`. Canonical `get_info` and deployed-code readback were verified against these bytes.
+- Demonstrated lifecycle outcomes on this contract: initial `NOT_ESTABLISHED`, corrected `QUALIFIED`, independent `QUALIFIED`, and fresh negative `NOT_ESTABLISHED`.
+- A fresh missing-file case correctly failed closed as `INCONCLUSIVE / PROVIDER_UNAVAILABLE / GITHUB_403_AMBIGUOUS` before marker or file verification. It is a validator-side GitHub availability limitation, not a missing-file success result. See `release-prep/FINAL_RELEASE_VERIFICATION.md`.
+
+The sections below preserve earlier deployments and evidence. They are historical records unless explicitly labelled as the current release target.
+
+## Earlier remediation deployment — historical
 
 - Branch: `audit/full-remediation`, current reviewed commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
 - Consolidated candidate source SHA-256: `cac38f9d2a607446b071aecfe7e00ed0be96c2b31dd4ea9f9633477295e1b45e`, Git blob `8348ba2282fc062e9fe32e488245d536bd138334`. The deployment script remains pinned to this hash.
@@ -12,7 +22,7 @@
 - The existing production contract, Vercel address and historical evidence remain unchanged. No fixture repository write, lifecycle transaction or merge occurred after this deployment.
 - GitHub Actions [run 38950006010](https://github.com/Bibidee/entrew/actions/runs/38950006010) passed on commit `2454b258154c31c63ced0848d7bab9580d7efe0c`.
 
-## Last recorded production release — 2026-10-16
+## Historical production release — 2026-10-16
 
 The details below are carried forward from the prior release record. They were not independently re-read from Vercel deployment configuration during this remediation turn.
 
@@ -24,7 +34,7 @@ The details below are carried forward from the prior release record. They were n
 - Vercel reports source `cli`, `githubCommitSha` `c421e35607e9d036812fc519854fbb0bfd456554` on `fix/genlayer-web-response-status`, and `gitDirty=1`. It cannot attest that the complete deployed artifact equals a clean Git commit.
 - Direct comparison of deployed `app/globals.css` and `components/EntrewApp.tsx` found the PR #4 accessibility changes from `24d805dc3f6c61d07641161fa04fec70e4a55d8a`; that is limited file evidence, not whole-artifact provenance. The deployed contract source remains the historical `21f1eee1f6b23a6fa902d7e2b6449d1f6e1363f5` source hash recorded below.
 
-## Contract and source integrity
+## Historical contract and source integrity
 
 - Chain: GenLayer Studionet `61999` (`0xf22f`).
 - Contract: `0xf37C3D7992833A876Bb2933c09b11bD49FC817ca`.
@@ -35,7 +45,7 @@ The details below are carried forward from the prior release record. They were n
 - Canonical `get_info`: `{"chain_id":61999,"contract":"EntrewRegistry","name":"ENTREW","page_limit":25,"protocol_outcomes_are_product_results":false,"schema_version":1}`.
 - No active-source reference to prohibited chain `61997` was found by the network check.
 
-## Live lifecycle evidence
+## Historical live lifecycle evidence
 
 The designated public fixture repository is [Bibidee/entrew-fixtures](https://github.com/Bibidee/entrew-fixtures). It is separate from the product repository. The user authorized its use and marker writes for these controlled checks.
 
@@ -51,7 +61,7 @@ The later RPC lookup for the negative assessment hash briefly returned “not fo
 
 The positive claim marker is at commit `2dce6f15a507aca0b26dbd8c85214ad5faaade73`; its marker SHA-256 is `f1ee76766a0e423b75126cb33e90b46defd5180725ad77e3c53cda1138572555`. The negative marker is at commit `030ef93dad30a4b40a6fdcf44deaf84b78252a81`; its marker SHA-256 is `d181eee57c77292fbfff1ce2b78228b0a59330992a5b9fda7d52f8f41cd317ab`. Both markers bind program `p1`, the applicant wallet, the fixture repository and a unique nonce at the assessed commit.
 
-## Completed release preflight
+## Historical release preflight
 
 - `package-lock.json` is committed; CI `npm ci` passed.
 - Repository-local GenLayer CLI is `0.39.1`; GenLayerJS is `1.1.8`.
@@ -59,7 +69,7 @@ The positive claim marker is at commit `2dce6f15a507aca0b26dbd8c85214ad5faaade73
 - GitHub Actions run [38894822355](https://github.com/Bibidee/entrew/actions/runs/38894822355) passed the full CI workflow for PR #4, including CLI/network checks, type/lint, unit and policy checks, Direct Mode, Playwright, build and dependency audit.
 - Vercel production build reached `READY` after the address was configured.
 
-## Remaining checks
+## Historical remaining checks
 
 The historical production release completed its deploy, production configuration, and positive/negative finalized lifecycle. The separate remediation test deployment above has no lifecycle transactions yet. The broader matrix is not complete: corrected-revision recovery, live inconclusive retry/cooldown, live replay and unauthorized-wallet controls, wrong-network real-wallet behavior, full mobile/manual accessibility review, and an independently held-out semantic benchmark remain open. See `docs/TEST_RESULTS.md` and `entrew/docs/TEST_MATRIX.md`.
 

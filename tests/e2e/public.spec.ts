@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const configuredContract = process.env.NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS?.trim();
-const configuredProgramTitle = process.env.E2E_EXPECTED_PROGRAM_TITLE?.trim() || "Corrected positive idempotency verification";
+const configuredProgramTitle = process.env.E2E_EXPECTED_PROGRAM_TITLE?.trim() || "Optimized evidence idempotency verification";
 
 const publicRoutes = [
   "/",

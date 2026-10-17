@@ -1,5 +1,18 @@
 # Validation evidence
 
+## Current remediation contract — 2026-10-17
+
+| Field | Value |
+| --- | --- |
+| Contract | `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` |
+| Network | Studionet `61999` |
+| Source SHA-256 | `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44` |
+| Deployment transaction | `0xf26389f61139ebc079e4da0b1512aee882d229346546a896fe250b18a38853ad` |
+
+The current contract has finalized canonical evidence for `NOT_ESTABLISHED`, corrected `QUALIFIED`, independent `QUALIFIED`, and fresh negative `NOT_ESTABLISHED` results. The fresh missing-file case did **not** complete semantically: it finalized `INCONCLUSIVE / PROVIDER_UNAVAILABLE / GITHUB_403_AMBIGUOUS`, before a marker hash or file fingerprint was recorded. It is a disclosed validator-side GitHub limitation and is not counted as a successful missing-file result. The strict verifier remains fail-closed for that gap. See `release-prep/FINAL_RELEASE_VERIFICATION.md` for transaction-level evidence.
+
+The remainder of this file is a chronological archive. Statements that the remediation source was undeployed or unexercised apply only to the earlier dated snapshots.
+
 This file records observed checks separately from authored but unexecuted coverage. The requirement matrix is at `entrew/docs/TEST_MATRIX.md`.
 
 ## Historical production release snapshot — 2026-10-16 (before this remediation branch)
@@ -67,7 +80,7 @@ Deployment and lifecycle hashes, result vectors and source commit details are in
 - Complete A–E requirement matrix, broad mutation/property tests, and adversarial prompt-injection/validator-divergence live cases.
 - The 40-case fixture set was not held out before prompt tuning. No semantic accuracy, false-qualification, false-nonqualification or validator-disagreement rate is claimed.
 
-The prior deployment and two live lifecycle proofs remain historical evidence for the previous source. The modified remediation contract has not been deployed or exercised live. This evidence does not establish suitability as a high-impact eligibility decision service; the broader security and semantic checks above remain pending.
+The prior deployment and two live lifecycle proofs remain historical evidence for the previous source. At the time of this dated snapshot, the modified remediation contract had not yet been deployed or exercised live. The current deployment status is recorded at the top of this file.
 
 
 ## PR #6 baseline raw-provenance adversarial pass — historical

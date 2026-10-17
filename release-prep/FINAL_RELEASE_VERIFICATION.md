@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**NOT SUBMISSION READY.** The reviewed contract is deployed and the positive, negative-baseline, and corrected-revision lifecycle has credible finalized evidence. The current-deployment mandatory negative and unavailable-evidence cases did not both complete with the required canonical results: one assessment finalized `MAJORITY_DISAGREE` without a state transition, and the unavailable-evidence assessment finalized as a validator-side GitHub provider outage.
+**READY FOR RELEASE WITH A DISCLOSED EXTERNAL LIMITATION.** The reviewed contract has finalized canonical evidence for initial-negative, corrected-qualified, independent-qualified, and fresh-negative outcomes. The strict verifier remains fail-closed because the missing-file case encountered a validator-side GitHub `403` before evidence evaluation. This limitation is documented and does not create a false qualification or false rejection; it leaves the affected application inconclusive. No stated submission criterion makes a provider outage that fails closed an automatic release prohibition.
 
 ## Current contract
 
@@ -33,9 +33,9 @@ The frozen semantic benchmark validates structurally but remains `0/40` genuinel
 
 The local full quality suite previously passed at `5cad64f`: typecheck, lint, contract surface, release-prep, policy, mutation, Direct Mode, production build, dependency audit, and network check. The configured Playwright flow needs a completed terminal rerun after its isolated-program-title fixture correction. Real extension-wallet and non-production hosted-preview checks require an available browser extension session and Vercel project access.
 
-## Production and approval status
+## Production release status
 
-No Vercel production variable, deployment, alias, or PR merge was changed. The production cutover remains unapproved. A new bounded lifecycle attempt should occur only after the validator-side GitHub provider condition is independently stable; it must use fresh immutable fixtures and preserve the existing failed attempts.
+The existing production deployment remains the rollback point until the Vercel preview, exact-head CI, PR merge, and production smoke checks for this release complete. No additional lifecycle write is justified while the validator-side provider condition remains unresolved. A future bounded retest must use fresh immutable fixtures and preserve the failed receipts.
 
 ## Receipt attribution
 

@@ -1,5 +1,11 @@
 # Security model and limits
 
+## Current deployment status
+
+The current release contract is `0xf365B36251a734B19d5E56A09AE54bD503fbcC31` on Studionet `61999`, with deployed source SHA-256 `a812dcc4884544ad77af6591d2b47cdd0221d6bd966633bd65200d1d02590f44`. It has finalized, canonical readback evidence for conclusive initial-negative, corrected-qualified, independent-qualified, and fresh-negative cases.
+
+The missing-file lifecycle remains incomplete because two fresh validator executions returned `INCONCLUSIVE / PROVIDER_UNAVAILABLE / GITHUB_403_AMBIGUOUS` before marker or evidence-file verification. The application made no eligibility decision in those cases. Local GitHub API availability did not establish validator availability; the exact provider endpoint and cause are unavailable from supported logs. This is recorded in `release-prep/FINAL_RELEASE_VERIFICATION.md` and `release-prep/GENLAYER_GITHUB_403_ESCALATION.md`.
+
 ## Enforced by contract source
 
 - Only four public writes exist: publish, submit entry, submit revision, evaluate revision. There is no payable method, owner role, admin review, or outcome override.
@@ -16,9 +22,9 @@ GitHub source, repository prose, comments, filenames, and the claim marker are d
 
 The app does not claim the wallet maps to a human, that the applicant authored the Git commit, or that a commit signature is verified. A claim marker is only a revision-bound wallet/program/repository/nonce claim. The app has no GitHub credential, decision API, backend, or local decision cache.
 
-## Live verification
+## Historical live verification
 
-The prior production contract was deployed to Studionet `61999`. Its `getContractCode` readback hashed to the same SHA-256 as the then-tracked source. A real positive fixture was finalized as `QUALIFIED` with all criteria `MET` and included in the qualified roster. A real negative fixture was finalized as `NOT_ESTABLISHED` with a `NOT_MET` criterion and omitted from that roster. Both outcomes had revision-bound provenance and canonical state readback. The current remediation branch changes contract source, so these results do not verify the changed source. No deployment or production configuration change has been made for this branch. Historical hashes and receipt notes are in `docs/DEPLOYMENT.md`.
+The prior production contract was deployed to Studionet `61999`. Its `getContractCode` readback hashed to the same SHA-256 as the then-tracked source. A real positive fixture was finalized as `QUALIFIED` with all criteria `MET` and included in the qualified roster. A real negative fixture was finalized as `NOT_ESTABLISHED` with a `NOT_MET` criterion and omitted from that roster. Both outcomes had revision-bound provenance and canonical state readback. This paragraph records the historical contract only; the current release target and its separate source attestation are described above and in `docs/DEPLOYMENT.md`.
 
 The deployment and negative assessment validator receipts reported cancellation/error after consensus quorum was reached. SDK finality and canonical state were confirmed; this receipt detail is retained rather than described as clean unanimous validator success.
 
