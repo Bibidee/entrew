@@ -688,7 +688,23 @@ export default function EntrewApp({ page }: { page: PageKey }) {
   function evidenceComposer(isRevision: boolean) {
     if (!program && !isRevision) return null;
     const criterionRows = program?.criteria || [];
-    const paths = pathsInput.split(/\r?\n/).map((path) => path.trim()).filter(Boolean);
+    const rawPaths = pathsInput.split(/\r?\n/).map((path) => path.trim()).filter(Boolean);
+    const invalidPath = rawPaths.find((path) => {
+      try {
+        normalizeEvidencePath(path);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    const paths = rawPaths.filter((path) => {
+      try {
+        normalizeEvidencePath(path);
+        return true;
+      } catch {
+        return false;
+      }
+    });
     const markerOwner = isRevision ? entry?.owner || "" : ownerInput.trim().toLowerCase();
     const markerRepo = isRevision ? entry?.repo || "" : repoInput.trim().toLowerCase();
     const markerProgram = program?.program_id || entry?.program_id || "";
@@ -697,7 +713,7 @@ export default function EntrewApp({ page }: { page: PageKey }) {
       <div className="panel-title"><div><div className="eyebrow">Evidence Studio</div><h2 style={{ marginTop: 7 }}>{isRevision ? "Pin a corrected revision" : "Bind your public work"}</h2><p>All files and the claim marker are resolved at one immutable commit.</p></div><span className="tag">No file upload</span></div>
       {!isRevision && <div className="form-grid"><div className="field"><label htmlFor="github-owner">GitHub owner</label><input id="github-owner" className="control" value={ownerInput} onChange={(event) => setOwnerInput(event.target.value)} placeholder="organization" autoCapitalize="none" required /></div><div className="field"><label htmlFor="github-repo">Repository</label><input id="github-repo" className="control" value={repoInput} onChange={(event) => setRepoInput(event.target.value)} placeholder="project-name" autoCapitalize="none" required /></div></div>}
       <div className="field"><label htmlFor="commit-sha">Full commit SHA</label><input id="commit-sha" className="control hash" value={shaInput} onChange={(event) => setShaInput(event.target.value)} placeholder="40 hexadecimal characters" autoCapitalize="none" required /><small>Use the exact commit that contains the marker and every evidence file.</small></div>
-      <div className="field"><label htmlFor="evidence-paths">Evidence paths, one per line (maximum three)</label><textarea id="evidence-paths" className="control hash" value={pathsInput} onChange={(event) => setPathsInput(event.target.value)} placeholder={'src/parser.ts\ndocs/usage.md'} /><small>Relative, allowlisted GitHub paths only. No directory traversal, URLs, or pasted source.</small></div>
+      <div className="field"><label htmlFor="evidence-paths">Evidence paths, one per line (maximum three)</label><textarea id="evidence-paths" className="control hash" aria-invalid={Boolean(invalidPath)} aria-describedby={invalidPath ? "evidence-paths-error" : undefined} value={pathsInput} onChange={(event) => setPathsInput(event.target.value)} placeholder={'src/parser.ts\ndocs/usage.md'} /><small>Relative, allowlisted GitHub paths only. No directory traversal, URLs, or pasted source.</small>{invalidPath && <p id="evidence-paths-error" className="error-message" role="alert">Remove the invalid path “{invalidPath}” before mapping evidence.</p>}</div>
       <div className="field"><span className="field-label">Map paths to every criterion</span><div>{criterionRows.map((criterion, index) => <div className="mapping-row" key={criterion.key}><div><strong>C{index + 1} · {criterion.key}</strong><p>{criterion.requirement}</p></div><select className="control" aria-label={`Evidence paths for criterion ${index + 1}`} multiple value={evidenceMapping[String(index)] || []} onChange={(event) => setEvidencePaths(index, [...event.currentTarget.selectedOptions].map((option) => option.value))} size={Math.max(2, Math.min(4, paths.length + 1))}>{paths.map((path) => <option key={path} value={path}>{path}</option>)}</select></div>)}</div><small>Select one or more listed paths for each criterion.</small></div>
       <div className="panel" style={{ padding: 17, background: "#fbfbfd" }}><div className="panel-title"><div><div className="eyebrow">Revision-locked claim</div><h3 style={{ marginTop: 6 }}>Prepare the marker before filing</h3></div><button type="button" className="button secondary" onClick={generateNonce}>Generate nonce</button></div>
         <p className="helper">Commit this exact JSON at <span className="hash">.entrew/claim.json</span>, then paste the resulting commit SHA above. The marker binds program, wallet, repository, and a unique nonce; it cannot include its own SHA. Generate a new nonce for every corrected revision.</p>

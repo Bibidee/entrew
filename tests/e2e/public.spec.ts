@@ -62,6 +62,18 @@ test("configured registry reads the corrected contract's finalized program", asy
   await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: configuredProgramTitle }));
 });
 
+test("configured application form rejects invalid evidence paths before mapping", async ({ page }) => {
+  test.skip(!configuredContract, "Set NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS to run this isolated live-contract check.");
+  test.setTimeout(180_000);
+  await page.goto("/apply?program=p1");
+  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: /Build a revision/i }));
+  await page.getByLabel("Evidence paths, one per line (maximum three)").fill("src/handler.py\n../secret.txt\nhttps://example.com/file");
+  await expect(page.getByText(/Remove the invalid path/)).toBeVisible();
+  await expect(page.getByLabel("Evidence paths, one per line (maximum three)")).toHaveAttribute("aria-invalid", "true");
+  expect(await page.getByLabel("Evidence paths for criterion 1").locator("option").allTextContents()).toEqual(["src/handler.py"]);
+  expect(await page.getByLabel("Evidence paths for criterion 2").locator("option").allTextContents()).toEqual(["src/handler.py"]);
+});
+
 test("all routes fit every requested viewport", async ({ page }) => {
   for (const width of [320, 375, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
