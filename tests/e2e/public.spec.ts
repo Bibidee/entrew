@@ -103,7 +103,15 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
       on: () => undefined,
       removeListener: () => undefined,
     });
-    Object.defineProperty(window, "ethereum", { configurable: true, value: { providers: [makeProvider("metamask"), makeProvider("rabby")] } });
+    const metaMask = makeProvider("metamask");
+    const rabbyFallback = makeProvider("rabby");
+    const rabbyAnnouncement = makeProvider("rabby");
+    window.addEventListener("eip6963:requestProvider", () => {
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", {
+        detail: { info: { uuid: "rabby-announcement", name: "Rabby Wallet" }, provider: rabbyAnnouncement },
+      }));
+    });
+    Object.defineProperty(window, "ethereum", { configurable: true, value: { providers: [metaMask, rabbyFallback] } });
   });
   await page.goto("/");
   const connectButton = page.getByRole("button", { name: "Connect wallet" });
@@ -112,6 +120,8 @@ test("MetaMask and Rabby can be selected independently and switch to exact Studi
   await expect(dialog).toBeVisible();
   const closeButton = page.getByRole("button", { name: "Close wallet selection" });
   const walletChoices = dialog.getByRole("button", { name: /MetaMask|Rabby/ });
+  await expect(walletChoices).toHaveCount(2);
+  expect((await walletChoices.allTextContents()).map((text) => text.replace("◇", "").trim()).sort()).toEqual(["MetaMask", "Rabby"]);
   await expect(closeButton).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(walletChoices.last()).toBeFocused();

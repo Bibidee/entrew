@@ -13,14 +13,21 @@ function providerName(provider: Eip1193Provider, fallback = "Injected wallet"): 
   return fallback;
 }
 
+function providerKey(provider: Eip1193Provider): string | null {
+  if (provider.isRabby) return "rabby";
+  if (provider.isMetaMask) return "metamask";
+  return null;
+}
+
 export async function discoverWallets(timeoutMs = 250): Promise<WalletOption[]> {
   if (typeof window === "undefined") return [];
   const announced = new Map<string, WalletOption>();
   const listener = (event: Event) => {
     const detail = (event as CustomEvent<{ info?: { uuid?: string; name?: string }; provider?: Eip1193Provider }>).detail;
     if (detail?.provider) {
-      const name = detail.info?.name || providerName(detail.provider);
-      announced.set(detail.info?.uuid || name, { id: detail.info?.uuid || name, name, provider: detail.provider });
+      const brandKey = providerKey(detail.provider);
+      const name = brandKey ? providerName(detail.provider) : detail.info?.name || providerName(detail.provider);
+      announced.set(brandKey || detail.info?.uuid || name, { id: brandKey || detail.info?.uuid || name, name, provider: detail.provider });
     }
   };
   window.addEventListener("eip6963:announceProvider", listener);
@@ -30,8 +37,9 @@ export async function discoverWallets(timeoutMs = 250): Promise<WalletOption[]> 
   const fallback = window.ethereum?.providers?.length ? window.ethereum.providers : window.ethereum ? [window.ethereum] : [];
   for (const provider of fallback) {
     const name = providerName(provider);
-    const id = `${name}:${String((provider as { _metamask?: unknown })._metamask ? "metamask" : fallback.indexOf(provider))}`;
-    if (![...announced.values()].some((option) => option.provider === provider)) announced.set(id, { id, name, provider });
+    const brandKey = providerKey(provider);
+    const id = brandKey || `${name}:${String((provider as { _metamask?: unknown })._metamask ? "metamask" : fallback.indexOf(provider))}`;
+    if (![...announced.values()].some((option) => option.provider === provider) && !announced.has(id)) announced.set(id, { id, name, provider });
   }
   return [...announced.values()].filter((option, index, all) => all.findIndex((other) => other.provider === option.provider) === index);
 }
