@@ -108,11 +108,12 @@ The full unconfigured Playwright suite passed `10`, with `2` configured-only che
 - `npm run network:check`: passed: no active `61997` reference and the RPC returned `0xf22f` (`61999`).
 - Positive live verifier: passed as recorded above.
 
-The latest unconfigured Playwright rerun completed its first two public-route checks, skipped
-the configured-only check, then did not yield a complete runner summary while starting the
-responsive and accessibility checks. It is therefore not counted as a fresh passing browser run.
-The earlier recorded browser results remain historical evidence only; browser verification must
-be rerun to a complete summary before release.
+The local unconfigured Playwright rerun did not yield a complete terminal summary after starting
+the responsive and accessibility checks. GitHub Actions independently completed the Chromium
+desktop browser project successfully in
+[run 38985856468](https://github.com/Bibidee/entrew/actions/runs/38985856468), alongside the
+build and audit. This supplies a fresh automated browser baseline; it does not replace real
+wallet-extension interaction or a hosted frontend check.
 
 ## Remaining blockers and approvals
 
@@ -121,7 +122,7 @@ be rerun to a complete summary before release.
 3. Complete the remaining corrected, unavailable-evidence, cooldown/retry, replay, unauthorized-control, and deadline matrix; then run the full strict verifier against the resulting final canonical state.
 4. Configure an independently attested evaluator and conduct a blind adjudication before claiming benchmark accuracy or error rates.
 5. Obtain and retain a recoverable finalized transaction hash for every lifecycle write, including a replacement corrected submission.
-6. Rerun the browser suite to a complete summary, then complete real extension wallet interaction and a hosted non-production frontend smoke test.
+6. Complete real extension wallet interaction and a hosted non-production frontend smoke test.
 7. Vercel production configuration/redeployment and PR merge still require explicit approval.
 
 Read-only attestation, finality polling, canonical reads, local tests, benchmark structure checks, and isolated frontend checks can be automated. Any new lifecycle write requires the designated unlocked test wallet; production wallet prompts require the user in the wallet UI.
