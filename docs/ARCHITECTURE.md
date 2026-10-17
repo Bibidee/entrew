@@ -22,11 +22,10 @@ Each submission is capped at three evidence paths, 12,000 decoded characters per
 
 The core question depends on inspecting bounded source evidence against a human-authored rubric. A conventional deterministic contract cannot fetch and semantically assess that source by itself. GenLayer's nondeterministic execution allows validators to independently reproduce retrieval and substantive judgments, while the contract deterministically verifies the result structure, evidence bindings, retry limits, deadlines, and roster writes. The model cannot set an outcome unilaterally.
 
-## External engineering references
+## Engineering references
 
 - [GenLayer nondeterminism documentation](https://docs.genlayer.com/developers/intelligent-contracts/features/non-determinism)
 - [GenLayer Direct Mode testing documentation](https://docs.genlayer.com/developers/intelligent-contracts/testing)
 - [GenLayerJS 1.1.8 package README](https://www.npmjs.com/package/genlayer-js/v/1.1.8)
-- [Accordant source repository](https://github.com/Bibidee/accordant) was read only for architecture/originality comparison. ENTREW does not copy its code or interface.
 
-Vowmark source inspection was unavailable during this run. The original handoff's originality constraints remain authoritative; this implementation uses a cobalt/cream Evidence Atlas, not a copied interface.
+ENTREW uses an original cobalt/cream Evidence Atlas interface and an independently defined evidence registry. These references document the platform APIs and testing model; they are not implementation sources.

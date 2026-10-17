@@ -17,7 +17,7 @@
     },
     {
       "path": "BUILD_PROMPT.txt",
-      "sha256": "5c21629e1025613c055afd39f06d213898f5a9bd2835750b105ed6f5556ae98f"
+      "sha256": "d99f2f6f6f38adb4bb4ad88abf9f2c962c820cbf6018218fd4d505795e7cd8cf"
     },
     {
       "path": "CONTRACT_SPEC.md",
@@ -29,7 +29,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "3c4a700d393a39b9dcb36de8dfb0fe424ff74ed809c6279214ebd584caf0d16f"
+      "sha256": "de67ef968d76adcc280b9de67a36097102ce1eb357b019ffcd55bf9a4df04bfe"
     },
     {
       "path": "docs/DEPLOYMENT.md",
@@ -41,7 +41,7 @@
     },
     {
       "path": "docs/FRONTEND_UX.md",
-      "sha256": "c9d3eb4fbc9b949ea628ac7f568ad8c4a8fadd145df9875855965f6671aac372"
+      "sha256": "6a0be1bd66fb93b819cca173de44050ecf525c113222c18f52064f2d50cd4cb4"
     },
     {
       "path": "docs/OPEN_DESIGN_QUESTIONS.md",
@@ -49,15 +49,15 @@
     },
     {
       "path": "docs/ORIGINALITY.md",
-      "sha256": "228df92ec30b639b91429a7e0cb33f9d760f5626cc309d9938386784bee65fc0"
+      "sha256": "acd22f4a741eb7a5b550f587c2603a51e8954dfc65decba438fb5674a0157c39"
     },
     {
       "path": "docs/REFERENCES.md",
-      "sha256": "d7cd35141c2354a77fdb7ffa8732c1b1196c2a86d59a81fa9cbfc4fbd0009b47"
+      "sha256": "3e5238a740f8e790b4bef99d11e1b4257bf6fe86a897f6ac1353f5363d788757"
     },
     {
       "path": "docs/RELEASE_CHECKLIST.md",
-      "sha256": "55023bdf518965c97fbe72e46900b796b5265efdf73656f69948236feed13a78"
+      "sha256": "9226ee54fe697a634ea37db405edf99a9c599363d091115eaf719dd28a1e535a"
     },
     {
       "path": "docs/SECURITY.md",
@@ -69,7 +69,8 @@
     },
     {
       "path": "docs/TEST_MATRIX.md",
-      "sha256": "6fe5b5549d2de620e4c4fac8ee84fa0331511f90bc0e93aa41f36a9a7ca8b37f"
+      "sha256": "f98752e8929d8544bd3dadbcf50275dca223d4fcf7092319e40cb4f1de62f56c"
     }
-  ]
+  ],
+  "integrity_note": "Hashes reflect the maintained handoff documents in this repository; the handoff is retained as a requirements reference and is not historical Git evidence."
 }

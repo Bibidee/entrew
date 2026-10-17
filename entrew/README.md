@@ -6,7 +6,7 @@
 
 ENTREW is a backendless public program-eligibility application on GenLayer. An organizer publishes a bounded, immutable criteria rubric for a developer program. Applicants submit a fixed GitHub commit with a small evidence set. GenLayer validators independently obtain public source evidence and substantively decide whether the evidence satisfies each published criterion. Deterministic contract rules derive `QUALIFIED`, `NOT_ESTABLISHED`, or `INCONCLUSIVE`; only finally verified qualification is listed on the public qualification roster.
 
-This is **not** a financial escrow system, employment platform, resume generator, general-purpose AI judge, source-code security auditor, originality certifier, or clone of RedLine, Vowmark, Accordant, or Patchbound. It never awards tokens or distributes money.
+This is **not** a financial escrow system, employment platform, resume generator, general-purpose AI judge, source-code security auditor or originality certifier. It never awards tokens or distributes money.
 
 ## Why GenLayer
 

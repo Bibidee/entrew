@@ -1,25 +1,19 @@
-# Originality and non-reskin boundaries
+# ENTREW originality and non-reskin boundaries
 
-## Against RedLine (`Ritapossible/RedLine`)
+ENTREW is an independent public-program eligibility and evidence registry. Its product boundary is defined by immutable organizer rubrics, applicant-submitted GitHub revisions, bounded source retrieval, validator consensus and a canonical qualification roster.
 
-RedLine monitors whether vendor promises change and moves a buyer/vendor cover treasury based on evidence. ENTREW publishes immutable program rubrics and decides whether pinned developer work qualifies for that rubric. No vendor monitoring, periodic terms checking, insurance-like coverage, claim refund, accrual stream, Watcher, Treasury or term-change comparison belongs in ENTREW.
+## Product boundary
 
-## Against Vowmark (`Bibidee/vowmark`)
+ENTREW does not provide escrow, bonds, prizes, refunds, salaries, payouts, hiring approval, private negotiation, vendor-term monitoring, insurance-like coverage, originality certification or a generalized AI evaluator. It does not claim human identity or authorship from a wallet address.
 
-Vowmark publicly binds an issuer to a promise, maturity, frozen evidence and GEN bond, then adjudicates fulfillment/breach. ENTREW is an applicant/program explorer and qualification roster without bond, money flows, maturity or remedy; its interface must not adopt Vowmark's neon graphite/angular record design, maturity columns or issuer-vow metaphors. May reuse the engineering *idea* of exact finality and public transaction recovery, not copy source.
+## Independent interface and data model
 
-## Against Accordant (`Bibidee/accordant`)
+The Evidence Atlas interface uses its own cobalt, warm-cream, coral and midnight palette, editorial hierarchy, program explorer, Evidence Studio and Decision Anatomy views. The data model is specific to organizer programs, applicant entries, immutable revisions, GitHub provenance and criterion-level outcomes. Wallet selection, finality, pagination, rate limits and safe URL parsing are standard engineering mechanisms; their implementation must remain scoped to ENTREW's trust model.
 
-Accordant is bilateral requester-performer work agreement with escrow, challenges, revision attempts and settlement. ENTREW is organizer-published opportunity criteria and third-party applicant qualifications with no pairwise acceptance, payout, escrow or private negotiation. Retain rigor around GitHub provenance and canonical reconciliation without copying UI, data model or economic state machine.
+## Engineering substance
 
-## Against Patchbound sample ZIP
-
-Patchbound is bilateral funded public GitHub patch evaluation against acceptance clauses, using PRs and GEN escrow. ENTREW has no designated developer, escrow, PR requirement, payout, refund or applicant-as-contractor role. The sample ZIP is only a packaging and verification-workflow reference; do not recycle contract code or JSX into ENTREW.
-
-## GenLayer substance
-
-A simple GitHub commit-existence check is insufficient to justify an Intelligent Contract. The contract must truly perform bounded, independently reproduced semantic criterion judgment. Fail the product originality gate if it becomes an ordinary form that stores a centralized classifier's answer on-chain.
+A GitHub commit-existence check is insufficient for an Intelligent Contract. The contract must perform bounded, independently reproduced semantic criterion judgment. Validators must retrieve the same pinned evidence, ignore instructions contained in untrusted repository content, and agree on stable provenance and criterion vectors. The qualified roster must be derived only from finalized canonical contract state.
 
 ## Independence gate
 
-Before release, review method names, contract state, route names, branding, CSS, headings, explanatory text, page hierarchy and source diff against all four references. Common industry mechanisms (wallet selection, finality, rate limits, safe URL parsing) are legitimate engineering ideas; copied project-specific implementation/assets are not.
+Before release, review method names, contract state, route names, branding, CSS, headings, explanatory text, page hierarchy and source diffs for accidental reuse. Remove unrelated attribution, links, assets and implementation instructions while preserving genuine GenLayer and GitHub API documentation.

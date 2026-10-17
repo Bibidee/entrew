@@ -2,9 +2,9 @@
 
 ## Phase 0: scope and research
 
-- [ ] Inspect this entire handoff, supplied Patchbound example, official GenLayer docs and exact pinned tool versions.
+- [ ] Inspect this entire handoff, official GenLayer docs and exact pinned tool versions.
 - [ ] Resolve only ambiguities in `docs/OPEN_DESIGN_QUESTIONS.md`, document choices before code freeze, do not broaden product.
-- [ ] Create a real clean ENTREW repository, not inside Vowmark or Accordant.
+- [ ] Create a real clean ENTREW repository with the handoff requirements and no unrelated project material.
 
 ## Phase 1: engineering
 

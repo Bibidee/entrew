@@ -1,6 +1,6 @@
 # The Evidence Atlas — original ENTREW frontend system
 
-ENTREW should feel like a premium research product used to assemble and interpret public proof. It must not copy Vowmark's black/neon/angular register, Accordant's lemon paper/board aesthetics, RedLine's coverage UI, or Patchbound's developer escrow workspace.
+ENTREW should feel like a premium research product used to assemble and interpret public proof. Its visual language, information architecture and interaction patterns must remain independently defined and must not reproduce another product's branding or interface.
 
 ## Visual system
 

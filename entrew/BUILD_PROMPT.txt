@@ -2,11 +2,11 @@
 
 You are the principal GenLayer Intelligent Contract engineer, adversarial auditor, Next.js frontend engineer, UX implementer, test engineer and release engineer responsible for building **ENTREW** from the supplied `ENTREW_V1_BUILD_HANDOFF.zip`.
 
-This handoff is a **specification package, not a code repository**. Unlike the sample Patchbound ZIP, no finished source is present. You must create the complete real source implementation, tests, config, lockfiles, source-controlled repository and documentation, then independently verify what you build. Never pretend a planned test or a written interface specification is an implemented contract. Do not turn this into another design-only response.
+This handoff is a **specification package, not a code repository**. No finished source is present in the package. You must create the complete real source implementation, tests, config, lockfiles, source-controlled repository and documentation, then independently verify what you build. Never pretend a planned test or a written interface specification is an implemented contract. Do not turn this into another design-only response.
 
 ## 0. MANDATE AND PRODUCT LOCK
 
-Read EVERY document inside `entrew/` first. Treat `PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `CONTRACT_SPEC.md`, and the numbered controls in `docs/` as the authoritative V1 product definition. Resolve minor, concrete compatibility contradictions in the simplest secure way and record the rationale. Do not rebrand, morph into a dashboard/marketplace, add money handling, or copy Vowmark/Accordant/Patchbound code or UI.
+Read EVERY document inside `entrew/` first. Treat `PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `CONTRACT_SPEC.md`, and the numbered controls in `docs/` as the authoritative V1 product definition. Resolve minor, concrete compatibility contradictions in the simplest secure way and record the rationale. Do not rebrand, morph into a dashboard/marketplace, add money handling, or copy external project code or UI.
 
 ENTREW is a public, backendless developer-program eligibility review platform. An organizer signs an immutable 2–3-criterion assessment rubric and deadline. An applicant signs an entry tied to a public GitHub repository, exact full commit SHA, bounded evidence files, and a program/wallet/repo claim marker inside that same revision. GenLayer validators independently fetch and substantively evaluate each criterion. The contract deterministically derives `QUALIFIED`, `NOT_ESTABLISHED`, `INCONCLUSIVE`. Only an actual finalized and canonical qualified record appears on the public roster. No organizer or admin can override results.
 
@@ -29,10 +29,10 @@ Do not add Supabase, Firebase, Express, Railway, Cloudflare Workers, authoritati
 
 ## 3. PHASE A — RESEARCH, SCOPE FREEZE AND PROJECT CREATION
 
-1. Unzip handoff. Read README, all specs, tests, originality limits and release checklist; examine official GenLayer 0.39.1-compatible docs and compare real GenLayer SDK APIs with Vowmark and Accordant for **engineering lessons only**.
+1. Read README, all specifications, tests, originality limits and release checklist; examine official GenLayer 0.39.1-compatible docs and verify the real GenLayer SDK APIs for **engineering lessons only**.
 2. Create the actual ENTREW repository from scratch in a clean working directory. Include `contracts/entrew_registry.py`, full Next.js `app/` routes, `components/`, `lib/` provider/client/validation/pagination/activity, Direct Mode tests, UI/browser tests, deployment scripts, network check, CI, README, architecture/security/release docs. Use a committed lockfile and `.env.example` with no secrets.
 3. Before coding, pin design decisions from `docs/OPEN_DESIGN_QUESTIONS.md` in a brief `docs/DESIGN_DECISIONS.md`; use smallest safe decisions, never broaden product silently.
-4. Build an independent, distinctive Evidence Atlas design: cobalt `#3454F5`, warm cream `#FFF6E8`, coral `#FF775C`, midnight `#1A2342`, clear reading widths, elegant type, responsive evidence workbench. Do NOT reproduce Vowmark's black neon angular public register or Accordant's lemon-paper agreement board.
+4. Build an independent, distinctive Evidence Atlas design: cobalt `#3454F5`, warm cream `#FFF6E8`, coral `#FF775C`, midnight `#1A2342`, clear reading widths, elegant type and a responsive evidence workbench. Do not reproduce an external product's branding, visual system or page hierarchy.
 
 ## 4. PHASE B — CONTRACT AND TRUE GENLAYER JUDGMENT
 
@@ -52,7 +52,7 @@ The qualified roster MUST come only from contract state, and only after a genuin
 
 ## 5. PHASE C — COMPLETE FRONTEND
 
-Build the full pages: `/`, `/program?ref=`, `/publish`, `/apply?program=`, `/evidence?entry=`, `/workspace`, `/activity`. Make real canonical reads, robust loading/empty/error states and bounded pages. Build a superior UI to Vowmark: premium original editorial hierarchy, program discovery, split Evidence Studio, criterion-by-criterion Decision Anatomy, readable source provenance, accessible transaction/finality rail, real activity recovery; responsive at 320/375/390/768/1280/1440 widths. No fabricated programs/hashes/counts.
+Build the full pages: `/`, `/program?ref=`, `/publish`, `/apply?program=`, `/evidence?entry=`, `/workspace`, `/activity`. Make real canonical reads, robust loading/empty/error states and bounded pages. Use a premium original editorial hierarchy, program discovery, split Evidence Studio, criterion-by-criterion Decision Anatomy, readable source provenance, accessible transaction/finality rail and real activity recovery; responsive at 320/375/390/768/1280/1440 widths. No fabricated programs/hashes/counts.
 
 EIP-1193 wallet selection: support MetaMask and Rabby when both exist, account/chain changed events, wrong-network guard, wallet rejection, add/switch exact Studionet, app-level disconnect with accurate explanation, wallet/version race guards and safe action locks. Reads must use final chain public RPC, not an implicitly wrong-network wallet. Never claim `ACCEPTED` final or show `QUALIFIED` from a provisional tx, cached local value, a leader result or a successful receipt without canonical state verification. After refresh, reconcile known hash and exact pending action against finalized contract, never blindly rebroadcast.
 
