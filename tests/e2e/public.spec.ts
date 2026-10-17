@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const configuredContract = process.env.NEXT_PUBLIC_ENTREW_CONTRACT_ADDRESS?.trim();
+const configuredProgramTitle = process.env.E2E_EXPECTED_PROGRAM_TITLE?.trim() || "Corrected positive idempotency verification";
 
 const publicRoutes = [
   "/",
@@ -55,10 +56,10 @@ test("configured registry reads the corrected contract's finalized program", asy
   test.setTimeout(180_000);
   await page.goto("/");
   await waitForFinalizedRead(page, page.getByText("1 published in finalized contract state"));
-  const program = page.getByRole("link", { name: /Corrected positive idempotency verification/i });
+  const program = page.getByRole("link", { name: configuredProgramTitle, exact: true });
   await expect(program).toBeVisible();
   await program.click();
-  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: "Corrected positive idempotency verification" }));
+  await waitForFinalizedRead(page, page.getByRole("heading", { level: 1, name: configuredProgramTitle }));
 });
 
 test("all routes fit every requested viewport", async ({ page }) => {
